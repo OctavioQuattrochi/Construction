@@ -1,0 +1,15 @@
+# Netlify — despliegue de la app Next.js (SSR, API routes, server actions).
+# El plugin oficial de Next.js lo instala Netlify automáticamente al detectar Next,
+# pero lo declaramos de forma explícita.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  # Evita que Prisma descargue durante el build en algunos entornos.
+  PRISMA_CLI_BINARY_TARGETS = "rhel-openssl-3.0.x"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

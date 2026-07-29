@@ -1,0 +1,360 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Box,
+  BrickWall,
+  PaintRoller,
+  LayoutGrid,
+  Layers,
+  RotateCcw,
+} from "lucide-react";
+import { Input, Label, Select } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
+import {
+  calcConcrete,
+  calcBricks,
+  calcMortar,
+  calcPaint,
+  calcFlooring,
+  type CalcResult,
+} from "@/lib/calculators";
+
+type FieldType = "number" | "select";
+interface Field {
+  key: string;
+  label: string;
+  type: FieldType;
+  default: number | string;
+  min?: number;
+  step?: number;
+  suffix?: string;
+  options?: { value: string; label: string }[];
+  full?: boolean;
+}
+interface CalcDef {
+  id: string;
+  name: string;
+  icon: typeof Box;
+  blurb: string;
+  fields: Field[];
+  compute: (v: Record<string, number | string>) => CalcResult;
+}
+
+const num = (v: Record<string, number | string>, k: string) => Number(v[k]);
+
+const CALCS: CalcDef[] = [
+  {
+    id: "hormigon",
+    name: "Hormigón",
+    icon: Box,
+    blurb: "Losas, platea, contrapiso y bases.",
+    fields: [
+      { key: "length", label: "Largo", type: "number", default: 4, min: 0, step: 0.1, suffix: "m" },
+      { key: "width", label: "Ancho", type: "number", default: 3, min: 0, step: 0.1, suffix: "m" },
+      { key: "thickness", label: "Espesor", type: "number", default: 10, min: 1, step: 1, suffix: "cm" },
+      {
+        key: "grade",
+        label: "Resistencia",
+        type: "select",
+        default: "H21",
+        options: [
+          { value: "H17", label: "H17 · contrapisos" },
+          { value: "H21", label: "H21 · uso general" },
+          { value: "H30", label: "H30 · estructural" },
+        ],
+      },
+      { key: "waste", label: "Desperdicio", type: "number", default: 8, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcConcrete({
+        length: num(v, "length"),
+        width: num(v, "width"),
+        thickness: num(v, "thickness"),
+        grade: v.grade as "H17" | "H21" | "H30",
+        waste: num(v, "waste"),
+      }),
+  },
+  {
+    id: "ladrillos",
+    name: "Ladrillos",
+    icon: BrickWall,
+    blurb: "Cantidad de piezas y mortero de asiento.",
+    fields: [
+      { key: "length", label: "Largo del muro", type: "number", default: 5, min: 0, step: 0.1, suffix: "m" },
+      { key: "height", label: "Alto del muro", type: "number", default: 2.6, min: 0, step: 0.1, suffix: "m" },
+      { key: "openings", label: "Aberturas", type: "number", default: 0, min: 0, step: 0.1, suffix: "m²" },
+      {
+        key: "type",
+        label: "Tipo de pieza",
+        type: "select",
+        default: "hueco18",
+        full: true,
+        options: [
+          { value: "hueco12", label: "Hueco 8×18×33" },
+          { value: "hueco18", label: "Hueco 12×18×33" },
+          { value: "comun", label: "Común macizo" },
+          { value: "bloque19", label: "Bloque hormigón 19×19×39" },
+        ],
+      },
+      { key: "waste", label: "Desperdicio", type: "number", default: 5, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcBricks({
+        length: num(v, "length"),
+        height: num(v, "height"),
+        openings: num(v, "openings"),
+        type: v.type as "hueco12" | "hueco18" | "comun" | "bloque19",
+        waste: num(v, "waste"),
+      }),
+  },
+  {
+    id: "mortero",
+    name: "Mortero",
+    icon: Layers,
+    blurb: "Revoques, carpetas y asiento.",
+    fields: [
+      { key: "area", label: "Superficie", type: "number", default: 20, min: 0, step: 0.5, suffix: "m²" },
+      {
+        key: "use",
+        label: "Uso",
+        type: "select",
+        default: "revoque_grueso",
+        full: true,
+        options: [
+          { value: "asiento", label: "Mortero de asiento" },
+          { value: "revoque_grueso", label: "Revoque grueso" },
+          { value: "revoque_fino", label: "Revoque fino a la cal" },
+          { value: "carpeta", label: "Carpeta de piso" },
+        ],
+      },
+      { key: "thickness", label: "Espesor", type: "number", default: 2, min: 0.5, step: 0.5, suffix: "cm" },
+      { key: "waste", label: "Desperdicio", type: "number", default: 10, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcMortar({
+        area: num(v, "area"),
+        use: v.use as "asiento" | "revoque_grueso" | "revoque_fino" | "carpeta",
+        thickness: num(v, "thickness"),
+        waste: num(v, "waste"),
+      }),
+  },
+  {
+    id: "pintura",
+    name: "Pintura",
+    icon: PaintRoller,
+    blurb: "Litros y baldes según rendimiento.",
+    fields: [
+      { key: "area", label: "Superficie a pintar", type: "number", default: 40, min: 0, step: 1, suffix: "m²" },
+      { key: "openings", label: "Descuento aberturas", type: "number", default: 4, min: 0, step: 0.5, suffix: "m²" },
+      { key: "coats", label: "Manos", type: "number", default: 2, min: 1, step: 1, suffix: "" },
+      { key: "yield", label: "Rendimiento", type: "number", default: 10, min: 1, step: 0.5, suffix: "m²/L" },
+      { key: "waste", label: "Desperdicio", type: "number", default: 5, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcPaint({
+        area: num(v, "area"),
+        openings: num(v, "openings"),
+        coats: num(v, "coats"),
+        yield: num(v, "yield"),
+        waste: num(v, "waste"),
+      }),
+  },
+  {
+    id: "pisos",
+    name: "Pisos",
+    icon: LayoutGrid,
+    blurb: "Piezas, cajas y adhesivo.",
+    fields: [
+      { key: "length", label: "Largo del ambiente", type: "number", default: 4, min: 0, step: 0.1, suffix: "m" },
+      { key: "width", label: "Ancho del ambiente", type: "number", default: 3, min: 0, step: 0.1, suffix: "m" },
+      { key: "pieceW", label: "Ancho pieza", type: "number", default: 60, min: 1, step: 1, suffix: "cm" },
+      { key: "pieceH", label: "Alto pieza", type: "number", default: 60, min: 1, step: 1, suffix: "cm" },
+      { key: "perBox", label: "Piezas por caja", type: "number", default: 3, min: 1, step: 1, suffix: "" },
+      { key: "waste", label: "Desperdicio", type: "number", default: 10, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcFlooring({
+        length: num(v, "length"),
+        width: num(v, "width"),
+        pieceW: num(v, "pieceW"),
+        pieceH: num(v, "pieceH"),
+        perBox: num(v, "perBox"),
+        waste: num(v, "waste"),
+      }),
+  },
+];
+
+function initialValues(def: CalcDef): Record<string, number | string> {
+  return Object.fromEntries(def.fields.map((f) => [f.key, f.default]));
+}
+
+export function CalculatorsClient() {
+  const [activeId, setActiveId] = useState(CALCS[0].id);
+  const active = CALCS.find((c) => c.id === activeId)!;
+  const [values, setValues] = useState(() => initialValues(active));
+
+  const result = useMemo(() => {
+    try {
+      return active.compute(values);
+    } catch {
+      return null;
+    }
+  }, [active, values]);
+
+  function switchTo(id: string) {
+    const def = CALCS.find((c) => c.id === id)!;
+    setActiveId(id);
+    setValues(initialValues(def));
+  }
+
+  return (
+    <div>
+      {/* Tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        {CALCS.map((c) => {
+          const isActive = c.id === activeId;
+          return (
+            <button
+              key={c.id}
+              onClick={() => switchTo(c.id)}
+              className={cn(
+                "group relative flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-medium transition-all duration-300",
+                isActive
+                  ? "border-ink-900 bg-ink-900 text-white shadow-soft"
+                  : "border-ink-200 bg-white text-ink-600 hover:border-ink-300 hover:text-ink-900"
+              )}
+            >
+              <c.icon
+                className={cn("h-4 w-4", isActive ? "text-amber-400" : "text-ink-400")}
+              />
+              {c.name}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+        {/* Inputs */}
+        <div className="rounded-3xl border border-ink-100 bg-white p-6 shadow-soft md:p-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ink-900 text-amber-400">
+                <active.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-display text-lg font-semibold text-ink-900">
+                  Calculadora de {active.name.toLowerCase()}
+                </h2>
+                <p className="text-sm text-ink-400">{active.blurb}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setValues(initialValues(active))}
+              className="flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-medium text-ink-500 transition-colors hover:border-ink-400 hover:text-ink-800"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {active.fields.map((f) => (
+              <div key={f.key} className={cn(f.full && "sm:col-span-2")}>
+                <Label htmlFor={f.key}>{f.label}</Label>
+                {f.type === "select" ? (
+                  <Select
+                    id={f.key}
+                    value={String(values[f.key])}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, [f.key]: e.target.value }))
+                    }
+                  >
+                    {f.options!.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <div className="relative">
+                    <Input
+                      id={f.key}
+                      type="number"
+                      inputMode="decimal"
+                      min={f.min}
+                      step={f.step}
+                      value={String(values[f.key])}
+                      onChange={(e) =>
+                        setValues((v) => ({
+                          ...v,
+                          [f.key]:
+                            e.target.value === "" ? "" : Number(e.target.value),
+                        }))
+                      }
+                      className={cn(f.suffix && "pr-14")}
+                    />
+                    {f.suffix && (
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-ink-400">
+                        {f.suffix}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Results */}
+        <div className="lg:sticky lg:top-24 lg:h-fit">
+          <div className="overflow-hidden rounded-3xl border border-ink-900 bg-ink-950 text-white shadow-elevated">
+            <div className="border-b border-white/10 px-6 py-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-amber-400">
+                Resultado estimado
+              </p>
+              <h3 className="mt-1 font-display text-lg font-semibold">
+                Materiales necesarios
+              </h3>
+            </div>
+
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeId + JSON.stringify(values)}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="divide-y divide-white/5"
+              >
+                {result?.rows.map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center justify-between gap-4 px-6 py-4"
+                  >
+                    <div>
+                      <p className="text-sm text-concrete-300">{row.label}</p>
+                      {row.hint && (
+                        <p className="mt-0.5 text-xs text-concrete-500">
+                          {row.hint}
+                        </p>
+                      )}
+                    </div>
+                    <span className="shrink-0 font-mono text-lg font-semibold text-amber-400">
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+
+            {result?.note && (
+              <p className="border-t border-white/10 px-6 py-4 text-xs leading-relaxed text-concrete-400">
+                {result.note}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
