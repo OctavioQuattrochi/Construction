@@ -10,22 +10,10 @@ export function LogoMark({ className }: { className?: string }) {
       fill="none"
     >
       <rect width="40" height="40" rx="10" fill="#0c0f14" />
-      {/* Abstract architectural "Q" / compass form */}
-      <path
-        d="M12 27V15l8-5 8 5v12"
-        stroke="#f0a500"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 20h16"
-        stroke="#ffffff"
-        strokeOpacity="0.55"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-      />
-      <circle cx="20" cy="27" r="1.8" fill="#f0a500" />
+      {/* Building blocks ascending — "build up" */}
+      <rect x="10" y="22" width="6" height="8" rx="1.4" fill="#ffffff" fillOpacity="0.55" />
+      <rect x="17" y="17" width="6" height="13" rx="1.4" fill="#f0a500" />
+      <rect x="24" y="11" width="6" height="19" rx="1.4" fill="#ffab20" />
     </svg>
   );
 }
@@ -43,19 +31,19 @@ export function Logo({
       <span className="flex flex-col leading-none">
         <span
           className={cn(
-            "font-display text-[1.05rem] font-700 font-bold tracking-tight",
+            "font-display text-[1.15rem] font-bold tracking-tight",
             light ? "text-white" : "text-ink-900"
           )}
         >
-          {site.name}
+          Bild<span className="text-amber-500">Ap</span>
         </span>
         <span
           className={cn(
-            "text-[0.62rem] font-medium uppercase tracking-[0.2em]",
+            "mt-0.5 text-[0.6rem] font-medium uppercase tracking-[0.2em]",
             light ? "text-concrete-400" : "text-ink-400"
           )}
         >
-          Estudio · Obra
+          Construcción
         </span>
       </span>
     </span>

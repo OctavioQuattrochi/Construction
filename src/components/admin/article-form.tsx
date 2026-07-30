@@ -136,7 +136,7 @@ export function ArticleForm({
               <Field label="Autor">
                 <input
                   name="author"
-                  defaultValue={article?.author ?? "Juan Carlos Quattrochi"}
+                  defaultValue={article?.author ?? "Equipo BildAp"}
                   className={inputClass}
                 />
               </Field>

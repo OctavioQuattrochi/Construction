@@ -92,8 +92,7 @@ export abstract class BaseProvider implements Provider {
           "Accept-Language": "es-AR,es;q=0.9",
         },
         signal,
-        // Cache live scrapes for 30 min to be a good citizen.
-        next: { revalidate: 1800 },
+        cache: "no-store",
       });
       if (!res.ok) return null;
       return await res.text();
@@ -110,7 +109,7 @@ export abstract class BaseProvider implements Provider {
       const res = await fetch(url, {
         headers: { "User-Agent": USER_AGENT, Accept: "application/json" },
         signal,
-        next: { revalidate: 1800 },
+        cache: "no-store",
       });
       if (!res.ok) return null;
       return (await res.json()) as T;

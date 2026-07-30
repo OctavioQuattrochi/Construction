@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, Calculator, ScanBarcode, BookOpen } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator,
+  ScanBarcode,
+  BookOpen,
+  Users,
+  Building2,
+} from "lucide-react";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
 
@@ -16,8 +23,8 @@ const tools = [
     href: "/calculadoras",
     icon: Calculator,
     title: "Calculadoras de obra",
-    desc: "Hormigón, ladrillos, mortero, pintura y pisos. Estimá materiales al instante.",
-    tag: "5 herramientas",
+    desc: "Hormigón, ladrillos, mortero, pintura, membrana y más. Estimá materiales al instante.",
+    tag: "8 herramientas",
     accent: "from-blue-500/20",
   },
   {
@@ -27,6 +34,22 @@ const tools = [
     desc: "Artículos técnicos y guías prácticas para construir mejor y evitar errores costosos.",
     tag: "Aprendé",
     accent: "from-emerald-500/20",
+  },
+  {
+    href: "/profesionales",
+    icon: Users,
+    title: "Red de profesionales",
+    desc: "Encontrá arquitectos, ingenieros y maestros mayores de obra verificados. Contacto directo.",
+    tag: "Comunidad",
+    accent: "from-purple-500/20",
+  },
+  {
+    href: "/inmuebles",
+    icon: Building2,
+    title: "Inmuebles",
+    desc: "Casas, departamentos y lotes en venta y alquiler publicados por empresas de la red.",
+    tag: "Nuevo",
+    accent: "from-rose-500/20",
   },
 ];
 
@@ -39,12 +62,12 @@ export function Tools() {
         <SectionHeading
           light
           align="center"
-          eyebrow="Herramientas gratuitas"
-          title="Decisiones técnicas al alcance de un clic"
-          description="Herramientas construidas para que planifiques, presupuestes y compres mejor — sin necesidad de ser un experto."
+          eyebrow="Todo BildAp"
+          title="Una plataforma, todo tu proyecto"
+          description="Herramientas, información y comunidad para que planifiques, presupuestes, compres y construyas mejor — sin necesidad de ser un experto."
         />
 
-        <StaggerGroup className="mt-14 grid gap-6 md:grid-cols-3">
+        <StaggerGroup className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {tools.map((t) => (
             <StaggerItem key={t.href}>
               <Link
@@ -69,7 +92,7 @@ export function Tools() {
                   {t.desc}
                 </p>
                 <span className="relative mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-amber-400">
-                  Abrir herramienta
+                  Explorar
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </span>
               </Link>

@@ -157,6 +157,78 @@ export function calcPaint(input: {
   };
 }
 
+// ---------------------------------------------------------------- MEMBRANE (roof)
+export function calcMembrane(input: {
+  length: number;
+  width: number;
+  overlap: number; // % de solape
+}): CalcResult {
+  const area = input.length * input.width;
+  const withOverlap = area * (1 + input.overlap / 100);
+  const rolls = Math.ceil(withOverlap / 10); // rollos de 10 m²
+  const primerL = area * 0.3; // imprimación asfáltica ~0,3 L/m²
+
+  return {
+    rows: [
+      { label: "Superficie de techo", value: `${nf(area, 2)} m²`, hint: `+ ${input.overlap}% de solape = ${nf(withOverlap, 2)} m²` },
+      { label: "Membrana asfáltica", value: `${rolls} rollo(s)`, hint: "rollos de 10 m² (10 m x 1 m)" },
+      { label: "Imprimación asfáltica", value: `${nf(primerL, 1)} L`, hint: "~0,3 L/m² · pintura asfáltica base" },
+    ],
+    note: "Estimación para membrana de 40 kg. Respetá el solape mínimo de 8–10 cm entre rollos.",
+  };
+}
+
+// ---------------------------------------------------------------- DRYWALL (durlock)
+export function calcDrywall(input: {
+  length: number;
+  height: number;
+  sides: number; // 1 o 2 caras
+  waste: number;
+}): CalcResult {
+  const area = input.length * input.height;
+  const totalPlateArea = area * input.sides * (1 + input.waste / 100);
+  const plates = Math.ceil(totalPlateArea / 2.88); // placa 1,20 x 2,40 = 2,88 m²
+  const montantes = Math.ceil(input.length / 0.4) + 1; // montantes cada 40 cm
+  const soleras = Math.ceil((input.length * 2) / 2.6); // solera sup + inf, perfiles de 2,60 m
+  const screws = Math.ceil(area * input.sides * 30); // ~30 tornillos/m²
+  const masilla = area * input.sides * 0.9; // ~0,9 kg/m²
+  const cinta = area * input.sides * 1.4; // ~1,4 m de cinta/m²
+
+  return {
+    rows: [
+      { label: "Placas de yeso", value: `${plates} placas`, hint: `${input.sides} cara(s) · 1,20 x 2,40 m` },
+      { label: "Perfiles montante", value: `${montantes} u`, hint: "cada 40 cm" },
+      { label: "Perfiles solera", value: `${soleras} u`, hint: "piso y techo" },
+      { label: "Tornillos", value: `${nf(screws)} u`, hint: "~30 por m²" },
+      { label: "Masilla", value: `${nf(masilla, 1)} kg` },
+      { label: "Cinta de juntas", value: `${nf(cinta)} m` },
+    ],
+    note: "Tabique estándar con estructura de perfiles galvanizados. Sumá aislante si corresponde.",
+  };
+}
+
+// ---------------------------------------------------------------- SKIRTING (zócalos)
+export function calcSkirting(input: {
+  perimeter: number; // metros lineales
+  openings: number; // metros de aberturas a descontar
+  pieceLength: number; // largo de cada zócalo (m)
+  waste: number;
+}): CalcResult {
+  const net = Math.max(0, input.perimeter - input.openings);
+  const withWaste = net * (1 + input.waste / 100);
+  const pieces = Math.ceil(withWaste / input.pieceLength);
+  const adhesive = Math.ceil((net * 0.15) / 3); // ~0,15 kg/m, pomos de 3 kg
+
+  return {
+    rows: [
+      { label: "Metros lineales", value: `${nf(net, 2)} m`, hint: `+ ${input.waste}% = ${nf(withWaste, 2)} m` },
+      { label: "Piezas de zócalo", value: `${pieces} u`, hint: `piezas de ${nf(input.pieceLength, 2)} m` },
+      { label: "Adhesivo / cemento de contacto", value: `${adhesive} pomo(s)`, hint: "estimado" },
+    ],
+    note: "Medí el perímetro del ambiente y descontá el ancho de las puertas.",
+  };
+}
+
 // ---------------------------------------------------------------- FLOORING
 export function calcFlooring(input: {
   length: number;

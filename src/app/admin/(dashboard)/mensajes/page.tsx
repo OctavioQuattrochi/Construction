@@ -1,4 +1,4 @@
-import { Mail, Phone, Trash2, Check, Inbox, Clock } from "lucide-react";
+import { Mail, Phone, Trash2, Check, Inbox, Clock, MessageCircle, Reply } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { AdminHeader, ConfirmSubmit } from "@/components/admin/ui";
@@ -103,6 +103,35 @@ export default async function AdminMessagesPage() {
               <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-ink-600">
                 {m.message}
               </p>
+
+              {/* Respuesta rápida */}
+              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-ink-100 pt-4">
+                <span className="mr-1 inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-ink-400">
+                  <Reply className="h-3.5 w-3.5" /> Responder
+                </span>
+                <a
+                  href={`mailto:${m.email}?subject=${encodeURIComponent(
+                    `Re: ${m.subject || "Tu consulta en BildAp"}`
+                  )}&body=${encodeURIComponent(
+                    `Hola ${m.name.split(" ")[0]},\n\nGracias por tu consulta en BildAp.\n\n`
+                  )}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-ink-950 transition-colors hover:bg-amber-400"
+                >
+                  <Mail className="h-3.5 w-3.5" /> Email
+                </a>
+                {m.phone && (
+                  <a
+                    href={`https://wa.me/${m.phone.replace(/\D/g, "")}?text=${encodeURIComponent(
+                      `Hola ${m.name.split(" ")[0]}, te contactamos de BildAp por tu consulta.`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366]/10 px-3 py-1.5 text-sm font-medium text-[#0a7d3e] transition-colors hover:bg-[#25D366]/20"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                  </a>
+                )}
+              </div>
             </div>
           ))}
         </div>

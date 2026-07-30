@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -109,23 +109,33 @@ export function ComparatorClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState("");
+  // Evita condiciones de carrera: solo la última búsqueda actualiza la UI.
+  const requestRef = useRef(0);
 
   const runSearch = useCallback(async (q: string) => {
     const term = q.trim();
     if (term.length < 2) return;
+    const reqId = ++requestRef.current;
     setLoading(true);
     setError(null);
     setSearched(term);
+    setData(null); // limpia resultados anteriores de inmediato
     try {
-      const res = await fetch(`/api/compare?q=${encodeURIComponent(term)}`);
+      const res = await fetch(
+        `/api/compare?q=${encodeURIComponent(term)}&t=${Date.now()}`,
+        { cache: "no-store" }
+      );
       const json = await res.json();
+      // Descartar si llegó una respuesta de una búsqueda más nueva.
+      if (reqId !== requestRef.current) return;
       if (!res.ok) throw new Error(json.error || "Error de búsqueda");
       setData(json as CompareResult);
     } catch (e) {
+      if (reqId !== requestRef.current) return;
       setError(e instanceof Error ? e.message : "Error inesperado");
       setData(null);
     } finally {
-      setLoading(false);
+      if (reqId === requestRef.current) setLoading(false);
     }
   }, []);
 

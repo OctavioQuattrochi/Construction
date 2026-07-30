@@ -37,7 +37,8 @@ export default function TerminosPage() {
           <h2 className="md-h2">Consultas profesionales</h2>
           <p className="md-p">
             El envío de una consulta no genera obligación contractual. El alcance
-            de cada servicio se acuerda de forma particular con {site.owner}.
+            de cada servicio se acuerda de forma particular con el equipo de{" "}
+            {site.company}.
           </p>
         </div>
       </section>

@@ -17,8 +17,14 @@ export async function GET(req: Request) {
 
   try {
     const result = await compare({ query, limit: 12 });
+    // No cachear: cada búsqueda debe traer datos frescos y evitar que quede
+    // "pegado" el resultado de una búsqueda anterior (CDN / browser).
     return NextResponse.json(result, {
-      headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1200" },
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "CDN-Cache-Control": "no-store",
+        "Netlify-CDN-Cache-Control": "no-store",
+      },
     });
   } catch (error) {
     console.error("compare error", error);

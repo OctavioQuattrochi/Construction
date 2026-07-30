@@ -138,7 +138,7 @@ export default async function ArticlePage({ params }: Props) {
                 <p className="mt-1 font-display text-xl font-semibold">
                   {article.author}
                 </p>
-                <p className="text-sm text-concrete-400">{site.ownerTitle}</p>
+                <p className="text-sm text-concrete-400">Equipo de {site.company}</p>
               </div>
               <ButtonLink href="/contacto" variant="primary">
                 Consultar por mi obra

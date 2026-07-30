@@ -2,18 +2,28 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, MessageCircle } from "lucide-react";
+import { Menu, X, MessageCircle, LogOut, User } from "lucide-react";
 import { nav, site } from "@/lib/site";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export function Navbar() {
+type Member = { name: string; email: string; image?: string } | null;
+
+export function Navbar({ member = null }: { member?: Member }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function logout() {
+    await fetch("/api/auth/member/logout", { method: "POST" });
+    setMenuOpen(false);
+    router.refresh();
+  }
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -67,15 +77,51 @@ export function Navbar() {
           </div>
 
           <div className="hidden items-center gap-2 lg:flex">
-            <ButtonLink
-              href={site.whatsappUrl}
-              external
-              variant="outline"
-              size="sm"
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </ButtonLink>
+            {member ? (
+              <div className="relative">
+                <button
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="flex items-center gap-2 rounded-full border border-ink-200 py-1 pl-1 pr-3 transition-colors hover:border-ink-300"
+                >
+                  {member.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={member.image} alt="" className="h-7 w-7 rounded-full object-cover" />
+                  ) : (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-ink-900 text-xs font-bold text-amber-400">
+                      {member.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="max-w-[8rem] truncate text-sm font-medium text-ink-700">
+                    {member.name.split(" ")[0]}
+                  </span>
+                </button>
+                <AnimatePresence>
+                  {menuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl border border-ink-100 bg-white p-2 shadow-elevated"
+                    >
+                      <p className="truncate px-3 py-2 text-xs text-ink-400">
+                        {member.email}
+                      </p>
+                      <button
+                        onClick={logout}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50"
+                      >
+                        <LogOut className="h-4 w-4" /> Cerrar sesión
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <ButtonLink href="/ingresar" variant="outline" size="sm">
+                <User className="h-4 w-4" />
+                Ingresar
+              </ButtonLink>
+            )}
             <ButtonLink href="/contacto" variant="secondary" size="sm">
               Consultar
             </ButtonLink>
@@ -113,13 +159,31 @@ export function Navbar() {
                 ))}
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                <ButtonLink href={site.whatsappUrl} external variant="outline" size="sm">
-                  <MessageCircle className="h-4 w-4" /> WhatsApp
-                </ButtonLink>
+                {member ? (
+                  <button
+                    onClick={logout}
+                    className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-ink-200 text-sm font-medium text-ink-700"
+                  >
+                    <LogOut className="h-4 w-4" /> Salir
+                  </button>
+                ) : (
+                  <ButtonLink href="/ingresar" variant="outline" size="sm">
+                    <User className="h-4 w-4" /> Ingresar
+                  </ButtonLink>
+                )}
                 <ButtonLink href="/contacto" variant="secondary" size="sm">
                   Consultar
                 </ButtonLink>
               </div>
+              <ButtonLink
+                href={site.whatsappUrl}
+                external
+                variant="ghost"
+                size="sm"
+                className="mt-2 w-full"
+              >
+                <MessageCircle className="h-4 w-4" /> WhatsApp
+              </ButtonLink>
             </div>
           </motion.div>
         )}

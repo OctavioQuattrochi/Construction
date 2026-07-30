@@ -9,6 +9,9 @@ import {
   LayoutGrid,
   Layers,
   RotateCcw,
+  ShieldPlus,
+  Frame,
+  Rows3,
 } from "lucide-react";
 import { Input, Label, Select } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
@@ -18,6 +21,9 @@ import {
   calcMortar,
   calcPaint,
   calcFlooring,
+  calcMembrane,
+  calcDrywall,
+  calcSkirting,
   type CalcResult,
 } from "@/lib/calculators";
 
@@ -181,6 +187,70 @@ const CALCS: CalcDef[] = [
         pieceW: num(v, "pieceW"),
         pieceH: num(v, "pieceH"),
         perBox: num(v, "perBox"),
+        waste: num(v, "waste"),
+      }),
+  },
+  {
+    id: "membrana",
+    name: "Membrana",
+    icon: ShieldPlus,
+    blurb: "Impermeabilización de techos.",
+    fields: [
+      { key: "length", label: "Largo del techo", type: "number", default: 6, min: 0, step: 0.1, suffix: "m" },
+      { key: "width", label: "Ancho del techo", type: "number", default: 4, min: 0, step: 0.1, suffix: "m" },
+      { key: "overlap", label: "Solape", type: "number", default: 12, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcMembrane({
+        length: num(v, "length"),
+        width: num(v, "width"),
+        overlap: num(v, "overlap"),
+      }),
+  },
+  {
+    id: "durlock",
+    name: "Durlock",
+    icon: Frame,
+    blurb: "Tabiques de construcción en seco.",
+    fields: [
+      { key: "length", label: "Largo del tabique", type: "number", default: 4, min: 0, step: 0.1, suffix: "m" },
+      { key: "height", label: "Alto del tabique", type: "number", default: 2.6, min: 0, step: 0.1, suffix: "m" },
+      {
+        key: "sides",
+        label: "Caras a placar",
+        type: "select",
+        default: "2",
+        options: [
+          { value: "1", label: "1 cara" },
+          { value: "2", label: "2 caras" },
+        ],
+      },
+      { key: "waste", label: "Desperdicio", type: "number", default: 10, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcDrywall({
+        length: num(v, "length"),
+        height: num(v, "height"),
+        sides: num(v, "sides"),
+        waste: num(v, "waste"),
+      }),
+  },
+  {
+    id: "zocalos",
+    name: "Zócalos",
+    icon: Rows3,
+    blurb: "Metros lineales de zócalo.",
+    fields: [
+      { key: "perimeter", label: "Perímetro del ambiente", type: "number", default: 14, min: 0, step: 0.1, suffix: "m" },
+      { key: "openings", label: "Ancho de puertas", type: "number", default: 0.9, min: 0, step: 0.1, suffix: "m" },
+      { key: "pieceLength", label: "Largo por pieza", type: "number", default: 2.4, min: 0.1, step: 0.1, suffix: "m" },
+      { key: "waste", label: "Desperdicio", type: "number", default: 8, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcSkirting({
+        perimeter: num(v, "perimeter"),
+        openings: num(v, "openings"),
+        pieceLength: num(v, "pieceLength"),
         waste: num(v, "waste"),
       }),
   },

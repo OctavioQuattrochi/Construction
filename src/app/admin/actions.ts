@@ -33,7 +33,7 @@ export async function saveArticle(fd: FormData) {
     coverImage: str(fd, "coverImage") || null,
     categoryId: str(fd, "categoryId") || null,
     tags: str(fd, "tags"),
-    author: str(fd, "author") || "Juan Carlos Quattrochi",
+    author: str(fd, "author") || "Equipo BildAp",
     readMinutes: Number(str(fd, "readMinutes")) || readingTime(content),
     featured: bool(fd, "featured"),
     published: bool(fd, "published"),
@@ -119,6 +119,88 @@ export async function deleteService(fd: FormData) {
   if (id) await db.service.delete({ where: { id } });
   revalidatePath("/admin/servicios");
   revalidatePath("/");
+}
+
+// ------------------------------------------------------------- PROFESSIONALS
+export async function saveProfessional(fd: FormData) {
+  await guard();
+  const id = str(fd, "id");
+  const name = str(fd, "name");
+  const data = {
+    name,
+    slug: slugify(str(fd, "slug") || name),
+    profession: str(fd, "profession"),
+    bio: str(fd, "bio"),
+    photo: str(fd, "photo") || null,
+    location: str(fd, "location") || "Córdoba",
+    phone: str(fd, "phone") || null,
+    whatsapp: str(fd, "whatsapp") || null,
+    email: str(fd, "email") || null,
+    specialties: str(fd, "specialties"),
+    featured: bool(fd, "featured"),
+    active: bool(fd, "active"),
+    order: Number(str(fd, "order")) || 0,
+  };
+  if (id) {
+    await db.professional.update({ where: { id }, data });
+  } else {
+    await db.professional.create({ data });
+  }
+  revalidatePath("/admin/profesionales");
+  revalidatePath("/profesionales");
+  redirect("/admin/profesionales");
+}
+
+export async function deleteProfessional(fd: FormData) {
+  await guard();
+  const id = str(fd, "id");
+  if (id) await db.professional.delete({ where: { id } });
+  revalidatePath("/admin/profesionales");
+  revalidatePath("/profesionales");
+}
+
+// ------------------------------------------------------------- PROPERTIES
+export async function saveProperty(fd: FormData) {
+  await guard();
+  const id = str(fd, "id");
+  const title = str(fd, "title");
+  const priceRaw = str(fd, "price");
+  const data = {
+    title,
+    slug: slugify(str(fd, "slug") || title),
+    operation: str(fd, "operation") || "venta",
+    type: str(fd, "type") || "casa",
+    price: priceRaw ? Number(priceRaw) : null,
+    currency: str(fd, "currency") || "USD",
+    location: str(fd, "location"),
+    bedrooms: str(fd, "bedrooms") ? Number(str(fd, "bedrooms")) : null,
+    bathrooms: str(fd, "bathrooms") ? Number(str(fd, "bathrooms")) : null,
+    area: str(fd, "area") ? Number(str(fd, "area")) : null,
+    coverImage: str(fd, "coverImage") || null,
+    images: str(fd, "images"),
+    description: str(fd, "description"),
+    agency: str(fd, "agency"),
+    phone: str(fd, "phone") || null,
+    whatsapp: str(fd, "whatsapp") || null,
+    featured: bool(fd, "featured"),
+    published: bool(fd, "published"),
+  };
+  if (id) {
+    await db.property.update({ where: { id }, data });
+  } else {
+    await db.property.create({ data });
+  }
+  revalidatePath("/admin/inmuebles");
+  revalidatePath("/inmuebles");
+  redirect("/admin/inmuebles");
+}
+
+export async function deleteProperty(fd: FormData) {
+  await guard();
+  const id = str(fd, "id");
+  if (id) await db.property.delete({ where: { id } });
+  revalidatePath("/admin/inmuebles");
+  revalidatePath("/inmuebles");
 }
 
 // ------------------------------------------------------------- MESSAGES

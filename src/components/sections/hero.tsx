@@ -2,7 +2,13 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck, Sparkles, Calculator } from "lucide-react";
+import {
+  ArrowRight,
+  Calculator,
+  ScanBarcode,
+  Users,
+  Building2,
+} from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { Dot } from "@/components/ui/badge";
 import { site } from "@/lib/site";
@@ -10,9 +16,16 @@ import { site } from "@/lib/site";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const stats = [
-  { value: "40+", label: "Años de experiencia" },
-  { value: "300+", label: "Obras y peritajes" },
-  { value: "4", label: "Herramientas técnicas" },
+  { value: "+40", label: "Materiales en el comparador" },
+  { value: "+8", label: "Calculadoras de obra" },
+  { value: "24/7", label: "Acceso libre y gratuito" },
+];
+
+const platformFeatures = [
+  { icon: ScanBarcode, label: "Comparador de precios" },
+  { icon: Calculator, label: "Calculadoras de obra" },
+  { icon: Users, label: "Red de profesionales" },
+  { icon: Building2, label: "Inmuebles" },
 ];
 
 export function Hero() {
@@ -43,7 +56,7 @@ export function Hero() {
             className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-concrete-200 backdrop-blur-md"
           >
             <Dot color="#f0a500" />
-            {site.ownerTitle}
+            {site.companyTagline} · {site.region}
           </motion.div>
 
           <motion.h1
@@ -52,9 +65,9 @@ export function Hero() {
             transition={{ duration: 0.8, ease, delay: 0.08 }}
             className="mt-6 max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[4.1rem]"
           >
-            Construí con{" "}
-            <span className="text-gradient-amber">criterio técnico</span>, no con
-            improvisación.
+            Todo para{" "}
+            <span className="text-gradient-amber">construir mejor</span>, en un
+            solo lugar.
           </motion.h1>
 
           <motion.p
@@ -63,9 +76,10 @@ export function Hero() {
             transition={{ duration: 0.8, ease, delay: 0.16 }}
             className="mt-6 max-w-xl text-lg leading-relaxed text-concrete-300"
           >
-            La plataforma de referencia para tomar decisiones de construcción en{" "}
-            {site.region}: consultoría profesional, guías técnicas, calculadoras
-            de materiales y comparación de precios entre proveedores.
+            BildAp reúne guías técnicas, calculadoras de materiales, comparación
+            de precios entre proveedores, una red de profesionales asociados e
+            inmuebles. La plataforma de referencia para tomar decisiones de
+            construcción en {site.region} y toda Argentina.
           </motion.p>
 
           <motion.div
@@ -74,13 +88,13 @@ export function Hero() {
             transition={{ duration: 0.8, ease, delay: 0.24 }}
             className="mt-9 flex flex-wrap items-center gap-3"
           >
-            <ButtonLink href="/contacto" size="lg" variant="primary">
-              Solicitar consultoría
+            <ButtonLink href="/comparador" size="lg" variant="primary">
+              Comparar precios
               <ArrowRight className="h-5 w-5" />
             </ButtonLink>
-            <ButtonLink href="/comparador" size="lg" variant="dark">
+            <ButtonLink href="/calculadoras" size="lg" variant="dark">
               <Calculator className="h-5 w-5" />
-              Comparar precios
+              Calcular materiales
             </ButtonLink>
           </motion.div>
 
@@ -103,7 +117,7 @@ export function Hero() {
           </motion.dl>
         </div>
 
-        {/* Floating credential card */}
+        {/* Floating platform card */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
@@ -114,32 +128,29 @@ export function Hero() {
             <div className="glass-dark rounded-4xl p-7 shadow-elevated">
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500 text-ink-950">
-                  <ShieldCheck className="h-6 w-6" />
+                  <Building2 className="h-6 w-6" />
                 </div>
                 <div>
                   <p className="font-display font-semibold text-white">
-                    {site.owner}
+                    Una sola plataforma
                   </p>
-                  <p className="text-sm text-concrete-400">Arquitecto responsable</p>
+                  <p className="text-sm text-concrete-400">
+                    Todo tu proyecto, integrado
+                  </p>
                 </div>
               </div>
               <p className="mt-5 text-sm leading-relaxed text-concrete-300">
-                “Cada decisión en obra tiene consecuencias técnicas y económicas.
-                Mi trabajo es que las tomes con información, no a ciegas.”
+                Planificá, presupuestá, compará precios y encontrá a los
+                profesionales indicados sin salir de BildAp.
               </p>
               <div className="mt-6 grid grid-cols-2 gap-3">
-                {[
-                  "Dirección de obra",
-                  "Peritajes técnicos",
-                  "Proyecto y diseño",
-                  "Gestión de obra",
-                ].map((f) => (
+                {platformFeatures.map((f) => (
                   <div
-                    key={f}
+                    key={f.label}
                     className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-concrete-200"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-                    {f}
+                    <f.icon className="h-3.5 w-3.5 text-amber-400" />
+                    {f.label}
                   </div>
                 ))}
               </div>

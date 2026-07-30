@@ -81,37 +81,43 @@ export const defaultCategories = [
 
 export const faqs = [
   {
-    q: "¿En qué zonas trabajan?",
-    a: "Trabajamos principalmente en Córdoba capital y alrededores, con consultoría remota disponible para todo el país. La plataforma de contenido y herramientas es de acceso libre desde cualquier lugar.",
+    q: "¿Qué es BildAp?",
+    a: "BildAp es una plataforma para la industria de la construcción: reúne guías técnicas, calculadoras de materiales, un comparador de precios entre proveedores, una red de profesionales asociados y un servicio inmobiliario. Todo en un mismo lugar para tomar mejores decisiones.",
   },
   {
-    q: "¿Necesito un arquitecto si mi obra es chica?",
-    a: "Sí. Incluso en ampliaciones o refacciones pequeñas, una buena decisión técnica inicial evita sobrecostos, problemas estructurales y trámites mal gestionados. Una consulta puntual suele pagarse sola.",
+    q: "¿En qué zonas opera?",
+    a: "El foco inicial es Córdoba y Argentina, con servicios y proveedores locales. Las herramientas y el contenido son de acceso libre desde cualquier lugar, y la plataforma está pensada para expandirse a más regiones.",
   },
   {
     q: "¿Cómo funciona el comparador de precios?",
-    a: "Buscás un material y el sistema consulta varios proveedores de Córdoba y Argentina, mostrando precio, marca, presentación y disponibilidad para que compares en un solo lugar. Los datos incluyen la fecha de obtención.",
+    a: "Buscás un material y el sistema consulta varios proveedores de Córdoba y Argentina, mostrando precio, marca, presentación y disponibilidad para que compares en un solo lugar. Cada resultado indica si el precio es en vivo o de referencia, y la fecha de obtención.",
   },
   {
     q: "¿Las calculadoras son confiables?",
-    a: "Usan dosificaciones y rendimientos estándar de la construcción y son excelentes para estimar y presupuestar. Para obras de responsabilidad estructural, siempre deben validarse con un profesional.",
+    a: "Usan dosificaciones y rendimientos estándar de la construcción y son excelentes para estimar y presupuestar tus compras. Para obras con responsabilidad estructural, siempre conviene validarlas con un profesional de la red.",
   },
   {
-    q: "¿Hacen peritajes para compraventa o seguros?",
-    a: "Sí. Emitimos informes técnicos firmados que sirven para operaciones de compraventa, reclamos a seguros, consorcios o instancias judiciales.",
+    q: "Soy profesional o empresa, ¿puedo sumarme?",
+    a: "Sí. Sumamos arquitectos, ingenieros, maestros mayores de obra y empresas a la red de profesionales, y permitimos a constructoras e inmobiliarias publicar inmuebles. Escribinos desde el formulario de contacto para conocer cómo participar.",
   },
   {
-    q: "¿Cuánto cuesta una consultoría?",
-    a: "Depende del alcance. Ofrecemos desde consultas puntuales hasta acompañamiento integral de obra. Escribinos por WhatsApp o el formulario de contacto y te pasamos un presupuesto sin cargo.",
+    q: "¿Tiene costo usar BildAp?",
+    a: "El contenido, las calculadoras y el comparador son gratuitos para quien construye. Los profesionales y empresas que quieran destacarse en la red pueden acceder a planes de membresía (próximamente).",
   },
 ];
 
 export const aboutBio = {
   years: 40,
+  // Pilares de la empresa (no de un profesional individual).
   highlights: [
-    "Más de cuatro décadas dirigiendo y proyectando obras.",
-    "Peritajes técnicos con validez profesional y judicial.",
+    "Una red de profesionales verificados a tu disposición.",
+    "Herramientas técnicas gratuitas para planificar y presupuestar.",
+    "Información transparente de precios y proveedores.",
     "Enfoque práctico: soluciones reales, no teoría.",
-    "Acompañamiento honesto, cuidando tu presupuesto.",
+  ],
+  pillars: [
+    { title: "Conocimiento", desc: "Guías y artículos técnicos escritos por especialistas." },
+    { title: "Herramientas", desc: "Calculadoras y comparador de precios en tiempo real." },
+    { title: "Comunidad", desc: "Red de profesionales e inmuebles en un solo lugar." },
   ],
 };

@@ -1,6 +1,6 @@
 # Construction — Plataforma de referencia en construcción
 
-Plataforma de información para la industria de la construcción (Argentina · Córdoba), del estudio del **Arquitecto Juan Carlos Quattrochi**. Contenido técnico, calculadoras de materiales, comparador de precios de proveedores, consultoría profesional y un pequeño CMS.
+**BildAp** es una plataforma para la industria de la construcción (Argentina · Córdoba): contenido técnico, calculadoras de materiales, comparador de precios de proveedores, red de profesionales asociados, servicio inmobiliario, newsletter y un panel de administración.
 
 Construida con **Next.js 15 (App Router) · TypeScript · Tailwind CSS · Framer Motion · Prisma**.
 

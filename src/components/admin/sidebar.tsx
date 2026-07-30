@@ -9,6 +9,9 @@ import {
   FolderTree,
   Wrench,
   Inbox,
+  Users,
+  Building2,
+  Mail,
   LogOut,
   ExternalLink,
   Menu,
@@ -22,7 +25,10 @@ const links = [
   { href: "/admin/articulos", label: "Artículos", icon: FileText },
   { href: "/admin/categorias", label: "Categorías", icon: FolderTree },
   { href: "/admin/servicios", label: "Servicios", icon: Wrench },
+  { href: "/admin/profesionales", label: "Profesionales", icon: Users },
+  { href: "/admin/inmuebles", label: "Inmuebles", icon: Building2 },
   { href: "/admin/mensajes", label: "Mensajes", icon: Inbox },
+  { href: "/admin/suscriptores", label: "Suscriptores", icon: Mail },
 ];
 
 export function Sidebar({ user }: { user: { name: string; email: string } }) {
@@ -43,7 +49,7 @@ export function Sidebar({ user }: { user: { name: string; email: string } }) {
         <div className="leading-none">
           <p className="font-display text-sm font-bold text-white">Admin</p>
           <p className="text-[0.65rem] uppercase tracking-widest text-concrete-500">
-            Quattrochi
+            BildAp
           </p>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { Tools } from "@/components/sections/tools";
 import { FAQ } from "@/components/sections/faq";
 import { CTA } from "@/components/sections/cta";
 import { TrustBar } from "@/components/sections/trust-bar";
+import { Partners } from "@/components/sections/partners";
 import { getServices } from "@/lib/queries";
 import { site } from "@/lib/site";
 
@@ -13,11 +14,10 @@ export default async function HomePage() {
 
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "ProfessionalService",
+    "@type": "Organization",
     name: site.brand,
     description: site.description,
     areaServed: `${site.region}, ${site.country}`,
-    founder: { "@type": "Person", name: site.owner, jobTitle: "Arquitecto" },
     url: site.url,
     email: site.email,
   };
@@ -33,6 +33,7 @@ export default async function HomePage() {
       <Services services={services} />
       <About />
       <Tools />
+      <Partners />
       <FAQ />
       <CTA />
     </>

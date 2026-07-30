@@ -83,6 +83,61 @@ export async function getArticleBySlug(slug: string) {
   }
 }
 
+// ------------------------------------------------------------- PROFESSIONALS
+export async function getProfessionals(filter: { profession?: string } = {}) {
+  try {
+    return await db.professional.findMany({
+      where: {
+        active: true,
+        ...(filter.profession ? { profession: filter.profession } : {}),
+      },
+      orderBy: [{ featured: "desc" }, { order: "asc" }, { name: "asc" }],
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function getProfessions() {
+  try {
+    const rows = await db.professional.findMany({
+      where: { active: true },
+      select: { profession: true },
+      distinct: ["profession"],
+      orderBy: { profession: "asc" },
+    });
+    return rows.map((r) => r.profession);
+  } catch {
+    return [];
+  }
+}
+
+// ------------------------------------------------------------- PROPERTIES
+export async function getProperties(
+  filter: { operation?: string; type?: string } = {}
+) {
+  try {
+    return await db.property.findMany({
+      where: {
+        published: true,
+        ...(filter.operation ? { operation: filter.operation } : {}),
+        ...(filter.type ? { type: filter.type } : {}),
+      },
+      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function getPropertyBySlug(slug: string) {
+  try {
+    return await db.property.findUnique({ where: { slug } });
+  } catch {
+    return null;
+  }
+}
+
 export async function getRelatedArticles(articleId: string, categoryId: string | null) {
   try {
     return await db.article.findMany({
