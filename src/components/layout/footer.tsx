@@ -75,7 +75,14 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-8 text-xs text-concrete-500 sm:flex-row sm:items-center">
+        {/* Gran wordmark de marca */}
+        <div className="mt-14 select-none overflow-hidden text-center leading-[0.8]">
+          <span className="font-display text-[22vw] font-extrabold tracking-tight text-white/[0.05] md:text-[15rem]">
+            Bild<span className="text-amber-500/25">Ap</span>
+          </span>
+        </div>
+
+        <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-8 text-xs text-concrete-500 sm:flex-row sm:items-center">
           <p>
             © {year} {site.brand}. Todos los derechos reservados.
           </p>

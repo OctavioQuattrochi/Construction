@@ -1,11 +1,10 @@
 import { cn } from "@/lib/utils";
-import { site } from "@/lib/site";
 
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 40 40"
-      className={cn("h-9 w-9", className)}
+      className={cn("h-10 w-10", className)}
       aria-hidden
       fill="none"
     >
@@ -18,6 +17,27 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
+// Wordmark reutilizable: "BildAp" con acento en "Ap".
+export function Wordmark({
+  className,
+  light = false,
+}: {
+  className?: string;
+  light?: boolean;
+}) {
+  return (
+    <span
+      className={cn(
+        "font-display font-extrabold tracking-tight",
+        light ? "text-white" : "text-ink-900",
+        className
+      )}
+    >
+      Bild<span className="text-amber-500">Ap</span>
+    </span>
+  );
+}
+
 export function Logo({
   className,
   light = false,
@@ -27,16 +47,9 @@ export function Logo({
 }) {
   return (
     <span className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark />
+      <LogoMark className="h-10 w-10" />
       <span className="flex flex-col leading-none">
-        <span
-          className={cn(
-            "font-display text-[1.15rem] font-bold tracking-tight",
-            light ? "text-white" : "text-ink-900"
-          )}
-        >
-          Bild<span className="text-amber-500">Ap</span>
-        </span>
+        <Wordmark light={light} className="text-[1.3rem]" />
         <span
           className={cn(
             "mt-0.5 text-[0.6rem] font-medium uppercase tracking-[0.2em]",

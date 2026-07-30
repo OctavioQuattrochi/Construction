@@ -10,7 +10,7 @@ import {
   Building2,
 } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
-import { Dot } from "@/components/ui/badge";
+import { LogoMark } from "@/components/ui/logo";
 import { site } from "@/lib/site";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -53,10 +53,13 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease }}
-            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-concrete-200 backdrop-blur-md"
+            className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 py-1.5 pl-1.5 pr-4 text-sm text-concrete-200 backdrop-blur-md"
           >
-            <Dot color="#f0a500" />
-            {site.companyTagline} · {site.region}
+            <LogoMark className="h-7 w-7" />
+            <span className="font-display font-bold text-white">
+              Bild<span className="text-amber-400">Ap</span>
+            </span>
+            <span className="text-concrete-400">· {site.companyTagline}</span>
           </motion.div>
 
           <motion.h1
@@ -65,9 +68,8 @@ export function Hero() {
             transition={{ duration: 0.8, ease, delay: 0.08 }}
             className="mt-6 max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[4.1rem]"
           >
-            Todo para{" "}
-            <span className="text-gradient-amber">construir mejor</span>, en un
-            solo lugar.
+            <span className="text-gradient-amber">BildAp</span>: todo para
+            construir mejor, en un solo lugar.
           </motion.h1>
 
           <motion.p

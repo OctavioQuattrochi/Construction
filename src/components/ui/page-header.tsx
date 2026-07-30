@@ -1,4 +1,5 @@
 import { Reveal } from "./reveal";
+import { LogoMark } from "./logo";
 import { cn } from "@/lib/utils";
 
 export function PageHeader({
@@ -20,6 +21,14 @@ export function PageHeader({
       <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-[44rem] -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
       <div className="container-x relative">
+        <Reveal>
+          <span className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 backdrop-blur-md">
+            <LogoMark className="h-6 w-6" />
+            <span className="font-display text-sm font-bold text-white">
+              Bild<span className="text-amber-400">Ap</span>
+            </span>
+          </span>
+        </Reveal>
         {eyebrow && (
           <Reveal>
             <span className="eyebrow text-amber-400">

@@ -379,13 +379,18 @@ export function CalculatorsClient() {
         {/* Results */}
         <div className="lg:sticky lg:top-24 lg:h-fit">
           <div className="overflow-hidden rounded-3xl border border-ink-900 bg-ink-950 text-white shadow-elevated">
-            <div className="border-b border-white/10 px-6 py-5">
-              <p className="text-xs font-medium uppercase tracking-wide text-amber-400">
-                Resultado estimado
-              </p>
-              <h3 className="mt-1 font-display text-lg font-semibold">
-                Materiales necesarios
-              </h3>
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-amber-400">
+                  Resultado estimado
+                </p>
+                <h3 className="mt-1 font-display text-lg font-semibold">
+                  Materiales necesarios
+                </h3>
+              </div>
+              <span className="font-display text-sm font-bold text-white/70">
+                Bild<span className="text-amber-400">Ap</span>
+              </span>
             </div>
 
             <AnimatePresence mode="wait">
