@@ -1,10 +1,20 @@
 import { NextResponse } from "next/server";
 import { compare } from "@/lib/providers/engine";
+import { checkRate } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
+  // Anti-abuso: 20 búsquedas por minuto por IP (el scraping es costoso).
+  const rate = checkRate(req, "compare", 20, 60 * 1000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Demasiadas búsquedas. Esperá un momento." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfter) } }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const query = (searchParams.get("q") || "").trim();
 

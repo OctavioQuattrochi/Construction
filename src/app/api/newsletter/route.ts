@@ -1,17 +1,26 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { checkRate } from "@/lib/rate-limit";
+import { sendEmail, newsletterEmail, leadNotifyTo } from "@/lib/mailer";
 
 export const runtime = "nodejs";
 
 const schema = z.object({
   email: z.string().email("Ingresá un email válido."),
   source: z.string().optional(),
-  // honeypot
-  website: z.string().max(0).optional(),
+  website: z.string().max(0).optional(), // honeypot
 });
 
 export async function POST(req: Request) {
+  const rate = checkRate(req, "newsletter", 5, 10 * 60 * 1000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Esperá unos minutos." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfter) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -29,13 +38,16 @@ export async function POST(req: Request) {
   if (parsed.data.website) return NextResponse.json({ ok: true }); // honeypot
 
   const email = parsed.data.email.toLowerCase().trim();
+
+  let created = false;
   try {
+    const existing = await db.subscriber.findUnique({ where: { email } });
     await db.subscriber.upsert({
       where: { email },
       update: { active: true },
       create: { email, source: parsed.data.source || "web" },
     });
-    return NextResponse.json({ ok: true });
+    created = !existing;
   } catch (error) {
     console.error("newsletter error", error);
     return NextResponse.json(
@@ -43,4 +55,13 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
+  // Notificar sólo cuando es un suscriptor nuevo.
+  const to = leadNotifyTo();
+  if (created && to) {
+    const { subject, html } = newsletterEmail(email);
+    await sendEmail({ to, subject, html });
+  }
+
+  return NextResponse.json({ ok: true });
 }

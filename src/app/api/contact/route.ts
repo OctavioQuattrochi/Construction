@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { checkRate } from "@/lib/rate-limit";
+import { sendEmail, contactLeadEmail, leadNotifyTo } from "@/lib/mailer";
 
 export const runtime = "nodejs";
 
@@ -11,11 +13,19 @@ const schema = z.object({
   subject: z.string().max(160).optional().or(z.literal("")),
   service: z.string().max(80).optional().or(z.literal("")),
   message: z.string().min(10, "Contanos un poco más (mín. 10 caracteres).").max(2000),
-  // honeypot
-  company: z.string().max(0).optional(),
+  company: z.string().max(0).optional(), // honeypot
 });
 
 export async function POST(req: Request) {
+  // Anti-abuso: 5 envíos cada 10 minutos por IP.
+  const rate = checkRate(req, "contact", 5, 10 * 60 * 1000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Demasiados envíos. Esperá unos minutos e intentá de nuevo." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfter) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -31,10 +41,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Honeypot triggered — pretend success.
-  if (parsed.data.company) {
-    return NextResponse.json({ ok: true });
-  }
+  if (parsed.data.company) return NextResponse.json({ ok: true }); // honeypot
 
   const { name, email, phone, subject, service, message } = parsed.data;
 
@@ -49,7 +56,6 @@ export async function POST(req: Request) {
         message,
       },
     });
-    return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("contact error", error);
     return NextResponse.json(
@@ -57,4 +63,13 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
+  // Notificación por email (best-effort: no bloquea la respuesta si falla).
+  const to = leadNotifyTo();
+  if (to) {
+    const { subject: s, html } = contactLeadEmail({ name, email, phone, subject, service, message });
+    await sendEmail({ to, subject: s, html, replyTo: email });
+  }
+
+  return NextResponse.json({ ok: true });
 }
