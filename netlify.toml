@@ -10,6 +10,10 @@
   NODE_VERSION = "20"
   # Evita que Prisma descargue durante el build en algunos entornos.
   PRISMA_CLI_BINARY_TARGETS = "rhel-openssl-3.0.x"
+  # RESEND_FROM (remitente) y LEAD_NOTIFY_EMAIL (= email de contacto público) NO
+  # son secretos; el escáner de Netlify los marca por coincidir con texto del
+  # build. Los excluimos. Los secretos reales (API key, DB, auth) siguen escaneados.
+  SECRETS_SCAN_OMIT_KEYS = "RESEND_FROM,LEAD_NOTIFY_EMAIL"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
