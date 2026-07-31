@@ -27,7 +27,7 @@ export default async function CalculadorasPage() {
         description="Herramientas prácticas para planificar y presupuestar. Ingresá las medidas de tu obra y obtené la cantidad de materiales estimada al instante."
       />
 
-      <section className="container-x -mt-6 pb-24">
+      <section className="container-x pt-10 pb-24">
         <CalculatorsClient isMember={Boolean(member)} />
       </section>
     </>

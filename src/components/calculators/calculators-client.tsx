@@ -513,49 +513,54 @@ export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) 
 
   return (
     <div>
-      {/* Categorías (etapas de obra) */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {CATEGORIES.map((cat) => {
-          const isActive = cat === active.category;
-          return (
-            <button
-              key={cat}
-              onClick={() => switchCategory(cat)}
-              className={cn(
-                "shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-300",
-                isActive
-                  ? "border-amber-500 bg-amber-500 text-ink-950"
-                  : "border-ink-200 bg-white text-ink-500 hover:border-ink-400 hover:text-ink-900"
-              )}
-            >
-              {cat}
-            </button>
-          );
-        })}
-      </div>
+      {/* Selector de etapa de obra + calculadora */}
+      <div className="rounded-3xl border border-ink-100 bg-white p-4 shadow-soft md:p-5">
+        <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">
+          Etapa de obra
+        </p>
+        <div className="no-scrollbar flex gap-2 overflow-x-auto">
+          {CATEGORIES.map((cat) => {
+            const isActive = cat === active.category;
+            return (
+              <button
+                key={cat}
+                onClick={() => switchCategory(cat)}
+                className={cn(
+                  "shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-300",
+                  isActive
+                    ? "border-amber-500 bg-amber-500 text-ink-950 shadow-soft"
+                    : "border-ink-200 bg-white text-ink-600 hover:border-ink-400 hover:text-ink-900"
+                )}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Calculadoras de la categoría */}
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
-        {calcsInCategory.map((c) => {
-          const isActive = c.id === activeId;
-          return (
-            <button
-              key={c.id}
-              onClick={() => switchTo(c.id)}
-              className={cn(
-                "group relative flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-medium transition-all duration-300",
-                isActive
-                  ? "border-ink-900 bg-ink-900 text-white shadow-soft"
-                  : "border-ink-200 bg-white text-ink-600 hover:border-ink-300 hover:text-ink-900"
-              )}
-            >
-              <c.icon
-                className={cn("h-4 w-4", isActive ? "text-amber-400" : "text-ink-400")}
-              />
-              {c.name}
-            </button>
-          );
-        })}
+        {/* Calculadoras de la etapa */}
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto border-t border-ink-100 pt-3">
+          {calcsInCategory.map((c) => {
+            const isActive = c.id === activeId;
+            return (
+              <button
+                key={c.id}
+                onClick={() => switchTo(c.id)}
+                className={cn(
+                  "group relative flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-medium transition-all duration-300",
+                  isActive
+                    ? "border-ink-900 bg-ink-900 text-white shadow-soft"
+                    : "border-ink-200 bg-white text-ink-600 hover:border-ink-300 hover:text-ink-900"
+                )}
+              >
+                <c.icon
+                  className={cn("h-4 w-4", isActive ? "text-amber-400" : "text-ink-400")}
+                />
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.9fr]">

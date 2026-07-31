@@ -46,6 +46,13 @@
   .container-x {
     @apply mx-auto w-full max-w-[1280px] px-6 md:px-8;
   }
+  /* Scroll horizontal sin barra visible (para filas de chips/tabs). */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
   .eyebrow {
     @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700;
   }
