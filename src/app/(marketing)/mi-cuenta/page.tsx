@@ -8,14 +8,33 @@ import {
   ArrowRight,
   Sparkles,
   Calculator,
-  Trash2,
-  DollarSign,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { SaveButton } from "@/components/member/save-button";
+import { DeleteCalcButton } from "@/components/member/delete-calc-button";
 import { getMemberSession } from "@/lib/member-auth";
 import { getSavedItems, getSavedCalculations } from "@/lib/queries";
 import type { SaveItemInput } from "@/components/member/save-button";
+
+// Parsea el resultado guardado. Soporta el formato nuevo (filas label/value)
+// y el viejo (objeto clave→número) por compatibilidad.
+function parseCalcRows(raw: string): { label: string; value: string }[] {
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.map((r) => ({
+        label: String(r.label ?? ""),
+        value: String(r.value ?? ""),
+      }));
+    }
+    return Object.entries(parsed).map(([label, value]) => ({
+      label: label.replace(/_/g, " "),
+      value: String(value),
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export const metadata: Metadata = {
   title: "Mi cuenta",
@@ -29,15 +48,23 @@ const sections = [
   { type: "professional", label: "Profesionales guardados", icon: Users },
 ] as const;
 
+// Fallback para registros viejos que guardaban el id en vez del nombre.
 const calcNames: Record<string, string> = {
   hormigon: "Hormigón",
   ladrillos: "Ladrillos",
   mortero: "Mortero",
   pintura: "Pintura",
-  piso: "Piso",
+  pisos: "Pisos",
   membrana: "Membrana",
   durlock: "Durlock",
   zocalos: "Zócalos",
+  excavacion: "Excavación",
+  bases: "Bases",
+  pilotines: "Pilotines",
+  hierro: "Hierro",
+  revoque: "Revoque",
+  chapa: "Chapa",
+  contrapiso: "Contrapiso",
 };
 
 export default async function MiCuentaPage() {
@@ -172,51 +199,41 @@ export default async function MiCuentaPage() {
                     {calculations.length}
                   </span>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {calculations.map((calc) => {
-                    const data = JSON.parse(calc.result) as Record<string, number>;
+                    const rows = parseCalcRows(calc.result);
                     return (
                       <div
                         key={calc.id}
                         className="flex flex-col rounded-2xl border border-ink-100 bg-white p-5 shadow-soft"
                       >
-                        <h3 className="line-clamp-2 font-display text-sm font-bold text-ink-900">
-                          {calc.name}
-                        </h3>
-                        <p className="mt-1 text-xs text-ink-400">
-                          {calcNames[calc.calcType] || calc.calcType}
-                        </p>
-                        <div className="mt-4 space-y-2 border-t border-ink-100 pt-3">
-                          {Object.entries(data).slice(0, 4).map(([key, val]) => (
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="line-clamp-2 font-display text-sm font-bold text-ink-900">
+                              {calc.name}
+                            </h3>
+                            <p className="mt-1 flex items-center gap-1 text-xs text-amber-600">
+                              <Calculator className="h-3 w-3" />
+                              {calcNames[calc.calcType] || calc.calcType}
+                            </p>
+                          </div>
+                          <DeleteCalcButton id={calc.id} />
+                        </div>
+                        <div className="mt-4 space-y-1.5 border-t border-ink-100 pt-3">
+                          {rows.slice(0, 6).map((row, i) => (
                             <div
-                              key={key}
-                              className="flex items-center justify-between text-xs"
+                              key={i}
+                              className="flex items-center justify-between gap-3 text-xs"
                             >
-                              <span className="text-ink-500 capitalize">
-                                {key.replace(/_/g, " ")}
+                              <span className="truncate text-ink-500">
+                                {row.label}
                               </span>
-                              <span className="font-mono font-semibold text-ink-900">
-                                {val.toFixed(1)}
+                              <span className="shrink-0 font-mono font-semibold text-ink-900">
+                                {row.value}
                               </span>
                             </div>
                           ))}
                         </div>
-                        <button
-                          onClick={async () => {
-                            if (
-                              confirm("¿Eliminar este cálculo?")
-                            ) {
-                              await fetch(
-                                `/api/calculations?id=${calc.id}`,
-                                { method: "DELETE" }
-                              );
-                              location.reload();
-                            }
-                          }}
-                          className="mt-4 flex items-center justify-center gap-1 rounded-lg bg-red-50 py-2 text-xs font-medium text-red-600 hover:bg-red-100"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" /> Eliminar
-                        </button>
                       </div>
                     );
                   })}

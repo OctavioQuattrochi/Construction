@@ -8,10 +8,17 @@ import {
   PaintRoller,
   LayoutGrid,
   Layers,
+  Layers2,
   RotateCcw,
   ShieldPlus,
   Frame,
   Rows3,
+  Shovel,
+  Boxes,
+  Cylinder,
+  Grip,
+  Warehouse,
+  Grid3x3,
 } from "lucide-react";
 import { Input, Label, Select } from "@/components/ui/field";
 import { SaveCalculationButton } from "@/components/calculators/save-calculation-button";
@@ -25,7 +32,15 @@ import {
   calcMembrane,
   calcDrywall,
   calcSkirting,
+  calcExcavation,
+  calcFoundation,
+  calcPiles,
+  calcSteel,
+  calcPlaster,
+  calcRoofSheet,
+  calcContrapiso,
   type CalcResult,
+  type StructElement,
 } from "@/lib/calculators";
 
 type FieldType = "number" | "select";
@@ -43,11 +58,25 @@ interface Field {
 interface CalcDef {
   id: string;
   name: string;
+  category: string;
   icon: typeof Box;
   blurb: string;
   fields: Field[];
   compute: (v: Record<string, number | string>) => CalcResult;
 }
+
+// Orden de las etapas de obra.
+const CATEGORIES = [
+  "Movimiento de suelos",
+  "Fundaciones",
+  "Estructura",
+  "Mampostería",
+  "Revoques",
+  "Techos",
+  "Pisos y revestimientos",
+  "Cielorrasos y tabiques",
+  "Terminaciones",
+] as const;
 
 const num = (v: Record<string, number | string>, k: string) => Number(v[k]);
 
@@ -55,6 +84,7 @@ const CALCS: CalcDef[] = [
   {
     id: "hormigon",
     name: "Hormigón",
+    category: "Estructura",
     icon: Box,
     blurb: "Losas, platea, contrapiso y bases.",
     fields: [
@@ -86,6 +116,7 @@ const CALCS: CalcDef[] = [
   {
     id: "ladrillos",
     name: "Ladrillos",
+    category: "Mampostería",
     icon: BrickWall,
     blurb: "Cantidad de piezas y mortero de asiento.",
     fields: [
@@ -119,6 +150,7 @@ const CALCS: CalcDef[] = [
   {
     id: "mortero",
     name: "Mortero",
+    category: "Mampostería",
     icon: Layers,
     blurb: "Revoques, carpetas y asiento.",
     fields: [
@@ -150,6 +182,7 @@ const CALCS: CalcDef[] = [
   {
     id: "pintura",
     name: "Pintura",
+    category: "Terminaciones",
     icon: PaintRoller,
     blurb: "Litros y baldes según rendimiento.",
     fields: [
@@ -171,6 +204,7 @@ const CALCS: CalcDef[] = [
   {
     id: "pisos",
     name: "Pisos",
+    category: "Pisos y revestimientos",
     icon: LayoutGrid,
     blurb: "Piezas, cajas y adhesivo.",
     fields: [
@@ -194,6 +228,7 @@ const CALCS: CalcDef[] = [
   {
     id: "membrana",
     name: "Membrana",
+    category: "Techos",
     icon: ShieldPlus,
     blurb: "Impermeabilización de techos.",
     fields: [
@@ -211,6 +246,7 @@ const CALCS: CalcDef[] = [
   {
     id: "durlock",
     name: "Durlock",
+    category: "Cielorrasos y tabiques",
     icon: Frame,
     blurb: "Tabiques de construcción en seco.",
     fields: [
@@ -239,6 +275,7 @@ const CALCS: CalcDef[] = [
   {
     id: "zocalos",
     name: "Zócalos",
+    category: "Terminaciones",
     icon: Rows3,
     blurb: "Metros lineales de zócalo.",
     fields: [
@@ -255,14 +292,200 @@ const CALCS: CalcDef[] = [
         waste: num(v, "waste"),
       }),
   },
+  {
+    id: "excavacion",
+    name: "Excavación",
+    category: "Movimiento de suelos",
+    icon: Shovel,
+    blurb: "Volumen de suelo y volquetes a retirar.",
+    fields: [
+      { key: "length", label: "Largo", type: "number", default: 10, min: 0, step: 0.1, suffix: "m" },
+      { key: "width", label: "Ancho", type: "number", default: 8, min: 0, step: 0.1, suffix: "m" },
+      { key: "depth", label: "Profundidad", type: "number", default: 0.5, min: 0, step: 0.1, suffix: "m" },
+      { key: "bulking", label: "Esponjamiento", type: "number", default: 25, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcExcavation({
+        length: num(v, "length"),
+        width: num(v, "width"),
+        depth: num(v, "depth"),
+        bulking: num(v, "bulking"),
+      }),
+  },
+  {
+    id: "bases",
+    name: "Bases",
+    category: "Fundaciones",
+    icon: Boxes,
+    blurb: "Hormigón y hierro para bases aisladas.",
+    fields: [
+      { key: "count", label: "Cantidad de bases", type: "number", default: 6, min: 1, step: 1, suffix: "u" },
+      { key: "length", label: "Largo", type: "number", default: 1, min: 0, step: 0.1, suffix: "m" },
+      { key: "width", label: "Ancho", type: "number", default: 1, min: 0, step: 0.1, suffix: "m" },
+      { key: "height", label: "Alto", type: "number", default: 0.4, min: 0, step: 0.05, suffix: "m" },
+      {
+        key: "grade",
+        label: "Resistencia",
+        type: "select",
+        full: true,
+        default: "H21",
+        options: [
+          { value: "H17", label: "H17" },
+          { value: "H21", label: "H21 · uso general" },
+          { value: "H30", label: "H30 · estructural" },
+        ],
+      },
+    ],
+    compute: (v) =>
+      calcFoundation({
+        count: num(v, "count"),
+        length: num(v, "length"),
+        width: num(v, "width"),
+        height: num(v, "height"),
+        grade: v.grade as "H17" | "H21" | "H30",
+      }),
+  },
+  {
+    id: "pilotines",
+    name: "Pilotines",
+    category: "Fundaciones",
+    icon: Cylinder,
+    blurb: "Hormigón para pilotines cilíndricos.",
+    fields: [
+      { key: "count", label: "Cantidad", type: "number", default: 12, min: 1, step: 1, suffix: "u" },
+      { key: "diameter", label: "Diámetro", type: "number", default: 20, min: 5, step: 1, suffix: "cm" },
+      { key: "depth", label: "Profundidad", type: "number", default: 2, min: 0.1, step: 0.1, suffix: "m" },
+      {
+        key: "grade",
+        label: "Resistencia",
+        type: "select",
+        full: true,
+        default: "H21",
+        options: [
+          { value: "H17", label: "H17" },
+          { value: "H21", label: "H21 · uso general" },
+          { value: "H30", label: "H30 · estructural" },
+        ],
+      },
+    ],
+    compute: (v) =>
+      calcPiles({
+        count: num(v, "count"),
+        diameter: num(v, "diameter"),
+        depth: num(v, "depth"),
+        grade: v.grade as "H17" | "H21" | "H30",
+      }),
+  },
+  {
+    id: "hierro",
+    name: "Hierro",
+    category: "Estructura",
+    icon: Grip,
+    blurb: "Cuantía de acero por m³ de hormigón.",
+    fields: [
+      { key: "volume", label: "Volumen de hormigón", type: "number", default: 2, min: 0, step: 0.1, suffix: "m³" },
+      {
+        key: "element",
+        label: "Elemento",
+        type: "select",
+        full: true,
+        default: "losa",
+        options: [
+          { value: "losa", label: "Losa" },
+          { value: "viga", label: "Viga" },
+          { value: "columna", label: "Columna" },
+          { value: "base", label: "Base" },
+          { value: "platea", label: "Platea" },
+          { value: "encadenado", label: "Encadenado" },
+        ],
+      },
+    ],
+    compute: (v) =>
+      calcSteel({
+        volume: num(v, "volume"),
+        element: v.element as StructElement,
+      }),
+  },
+  {
+    id: "revoque",
+    name: "Revoque",
+    category: "Revoques",
+    icon: Layers2,
+    blurb: "Grueso, fino, completo o monocapa.",
+    fields: [
+      { key: "area", label: "Superficie a revocar", type: "number", default: 30, min: 0, step: 0.5, suffix: "m²" },
+      {
+        key: "type",
+        label: "Tipo de revoque",
+        type: "select",
+        full: true,
+        default: "completo",
+        options: [
+          { value: "grueso", label: "Solo grueso" },
+          { value: "fino", label: "Solo fino" },
+          { value: "completo", label: "Completo (grueso + fino)" },
+          { value: "monocapa", label: "Monocapa" },
+        ],
+      },
+      { key: "waste", label: "Desperdicio", type: "number", default: 10, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcPlaster({
+        area: num(v, "area"),
+        type: v.type as "grueso" | "fino" | "completo" | "monocapa",
+        waste: num(v, "waste"),
+      }),
+  },
+  {
+    id: "chapa",
+    name: "Chapa",
+    category: "Techos",
+    icon: Warehouse,
+    blurb: "Chapas, tornillos y correas.",
+    fields: [
+      { key: "slope", label: "Largo del faldón", type: "number", default: 6, min: 0, step: 0.1, suffix: "m" },
+      { key: "width", label: "Ancho a cubrir", type: "number", default: 8, min: 0, step: 0.1, suffix: "m" },
+      { key: "usefulWidth", label: "Ancho útil chapa", type: "number", default: 1, min: 0.5, step: 0.01, suffix: "m" },
+      { key: "screwsPerM2", label: "Tornillos", type: "number", default: 7, min: 1, step: 1, suffix: "/m²" },
+    ],
+    compute: (v) =>
+      calcRoofSheet({
+        slope: num(v, "slope"),
+        width: num(v, "width"),
+        usefulWidth: num(v, "usefulWidth"),
+        screwsPerM2: num(v, "screwsPerM2"),
+      }),
+  },
+  {
+    id: "contrapiso",
+    name: "Contrapiso",
+    category: "Pisos y revestimientos",
+    icon: Grid3x3,
+    blurb: "Cemento, cal, arena y cascote.",
+    fields: [
+      { key: "area", label: "Superficie", type: "number", default: 30, min: 0, step: 0.5, suffix: "m²" },
+      { key: "thickness", label: "Espesor", type: "number", default: 8, min: 1, step: 1, suffix: "cm" },
+      { key: "waste", label: "Desperdicio", type: "number", default: 8, min: 0, step: 1, suffix: "%" },
+    ],
+    compute: (v) =>
+      calcContrapiso({
+        area: num(v, "area"),
+        thickness: num(v, "thickness"),
+        waste: num(v, "waste"),
+      }),
+  },
 ];
 
 function initialValues(def: CalcDef): Record<string, number | string> {
   return Object.fromEntries(def.fields.map((f) => [f.key, f.default]));
 }
 
+// Arranca por la primera calculadora de la primera etapa de obra.
+const FIRST_ID =
+  CALCS.find((c) => c.category === CATEGORIES[0])?.id ?? CALCS[0].id;
+
 export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) {
-  const [activeId, setActiveId] = useState(CALCS[0].id);
+  const [activeId, setActiveId] = useState(FIRST_ID);
   const active = CALCS.find((c) => c.id === activeId)!;
   const [values, setValues] = useState(() => initialValues(active));
 
@@ -274,28 +497,45 @@ export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) 
     }
   }, [active, values]);
 
-  // Para guardar: convertir los rows del resultado a un object
-  const resultData = useMemo(() => {
-    if (!result) return {};
-    return Object.fromEntries(
-      result.rows.map((row) => {
-        const num = parseFloat(row.value.replace(/[^\d.,]/g, "").replace(",", "."));
-        return [row.label.toLowerCase().replace(/\s+/g, "_"), num || 0];
-      })
-    );
-  }, [result]);
-
   function switchTo(id: string) {
     const def = CALCS.find((c) => c.id === id)!;
     setActiveId(id);
     setValues(initialValues(def));
   }
 
+  function switchCategory(cat: string) {
+    const first = CALCS.find((c) => c.category === cat);
+    if (first) switchTo(first.id);
+  }
+
+  const calcsInCategory = CALCS.filter((c) => c.category === active.category);
+
   return (
     <div>
-      {/* Tabs */}
+      {/* Categorías (etapas de obra) */}
       <div className="flex gap-2 overflow-x-auto pb-2">
-        {CALCS.map((c) => {
+        {CATEGORIES.map((cat) => {
+          const isActive = cat === active.category;
+          return (
+            <button
+              key={cat}
+              onClick={() => switchCategory(cat)}
+              className={cn(
+                "shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-all duration-300",
+                isActive
+                  ? "border-amber-500 bg-amber-500 text-ink-950"
+                  : "border-ink-200 bg-white text-ink-500 hover:border-ink-400 hover:text-ink-900"
+              )}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Calculadoras de la categoría */}
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
+        {calcsInCategory.map((c) => {
           const isActive = c.id === activeId;
           return (
             <button
@@ -444,14 +684,18 @@ export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) 
               <div className="border-t border-white/10 px-6 py-4">
                 <SaveCalculationButton
                   calcType={activeId}
+                  calcName={active.name}
                   quantity={
                     Number(values.length) ||
                     Number(values.area) ||
                     Number(values.perimeter) ||
+                    Number(values.slope) ||
+                    Number(values.count) ||
+                    Number(values.volume) ||
                     Number(values.width) ||
                     1
                   }
-                  result={resultData}
+                  rows={result.rows}
                   isMember={isMember}
                 />
               </div>

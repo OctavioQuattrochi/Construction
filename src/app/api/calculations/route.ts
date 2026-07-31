@@ -7,21 +7,13 @@ export const runtime = "nodejs";
 
 const schema = z.object({
   name: z.string().min(3, "Nombre mín. 3 caracteres").max(100),
-  calcType: z.enum([
-    "h17",
-    "h21",
-    "h30",
-    "ladrillo",
-    "bloque",
-    "mortar",
-    "paint",
-    "flooring",
-    "membrana",
-    "durlock",
-    "zocalo",
-  ]),
+  calcType: z.string().min(1).max(40), // id de la calculadora
+  calcName: z.string().max(60).optional(), // nombre legible ("Hormigón")
   quantity: z.number().positive("Cantidad debe ser > 0"),
-  result: z.record(z.string(), z.number()), // { cemento: 10, arena: 20 }
+  rows: z
+    .array(z.object({ label: z.string().max(120), value: z.string().max(120) }))
+    .min(1)
+    .max(20),
 });
 
 export async function POST(req: Request) {
@@ -42,16 +34,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
   }
 
-  const { name, calcType, quantity, result } = parsed.data;
+  const { name, calcType, calcName, quantity, rows } = parsed.data;
 
   try {
     const calc = await db.savedCalculation.create({
       data: {
         memberId: session.id,
         name,
-        calcType,
+        calcType: calcName || calcType,
         quantity,
-        result: JSON.stringify(result),
+        result: JSON.stringify(rows),
       },
     });
     return NextResponse.json({ id: calc.id });

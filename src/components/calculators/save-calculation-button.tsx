@@ -6,15 +6,22 @@ import { toast } from "sonner";
 import { Save, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export interface CalcRow {
+  label: string;
+  value: string;
+}
+
 export function SaveCalculationButton({
   calcType,
+  calcName,
   quantity,
-  result,
+  rows,
   isMember,
 }: {
   calcType: string;
+  calcName: string;
   quantity: number;
-  result: Record<string, number>;
+  rows: CalcRow[];
   isMember: boolean;
 }) {
   const router = useRouter();
@@ -33,10 +40,18 @@ export function SaveCalculationButton({
 
     setLoading(true);
     try {
+      // Solo guardamos label + value de cada fila (sin hints).
+      const cleanRows = rows.map((r) => ({ label: r.label, value: r.value }));
       const res = await fetch("/api/calculations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), calcType, quantity, result }),
+        body: JSON.stringify({
+          name: name.trim(),
+          calcType,
+          calcName,
+          quantity,
+          rows: cleanRows,
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error");

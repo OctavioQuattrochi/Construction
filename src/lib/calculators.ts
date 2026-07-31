@@ -229,6 +229,199 @@ export function calcSkirting(input: {
   };
 }
 
+// ---------------------------------------------------------------- EXCAVATION (movimiento de suelos)
+export function calcExcavation(input: {
+  length: number;
+  width: number;
+  depth: number; // m
+  bulking: number; // % de esponjamiento
+}): CalcResult {
+  const bank = input.length * input.width * input.depth;
+  const loose = bank * (1 + input.bulking / 100);
+  const skips = Math.ceil(loose / 5); // volquete estándar ~5 m³
+
+  return {
+    rows: [
+      { label: "Volumen a excavar", value: `${nf(bank, 2)} m³`, hint: `${nf(input.length, 1)} × ${nf(input.width, 1)} × ${nf(input.depth, 1)} m` },
+      { label: "Volumen esponjado", value: `${nf(loose, 2)} m³`, hint: `+ ${input.bulking}% al remover el suelo` },
+      { label: "Volquetes a retirar", value: `${skips} u`, hint: "volquete de ~5 m³" },
+    ],
+    note: "El esponjamiento varía según el suelo (tierra 20–25%, arcilla ~30%). Estimación para retiro de material.",
+  };
+}
+
+// ---------------------------------------------------------------- STEEL RATIOS
+const STEEL_RATIO: Record<string, number> = {
+  losa: 90,
+  viga: 130,
+  columna: 140,
+  base: 85,
+  platea: 75,
+  encadenado: 110,
+  pilotin: 100,
+};
+
+// ---------------------------------------------------------------- FOUNDATIONS (bases)
+export function calcFoundation(input: {
+  count: number;
+  length: number; // m
+  width: number; // m
+  height: number; // m
+  grade: ConcreteGrade;
+}): CalcResult {
+  const volEach = input.length * input.width * input.height;
+  const vol = input.count * volEach;
+  const mix = CONCRETE_MIX[input.grade];
+  const bags = Math.ceil((vol * mix.cement) / 50);
+  const steel = vol * STEEL_RATIO.base;
+
+  return {
+    rows: [
+      { label: "Volumen por base", value: `${nf(volEach, 3)} m³` },
+      { label: "Volumen total", value: `${nf(vol, 2)} m³`, hint: `${input.count} base(s)` },
+      { label: "Cemento", value: `${bags} bolsas`, hint: `${nf(vol * mix.cement)} kg · bolsas de 50 kg` },
+      { label: "Arena", value: `${nf(vol * mix.sand, 2)} m³` },
+      { label: "Piedra", value: `${nf(vol * mix.gravel, 2)} m³` },
+      { label: "Hierro estimado", value: `${nf(steel)} kg`, hint: "~85 kg/m³ · según cálculo estructural" },
+    ],
+    note: `Hormigón ${mix.label}. El armado de hierro depende del cálculo estructural; tomá el valor como referencia.`,
+  };
+}
+
+// ---------------------------------------------------------------- PILES (pilotines)
+export function calcPiles(input: {
+  count: number;
+  diameter: number; // cm
+  depth: number; // m
+  grade: ConcreteGrade;
+}): CalcResult {
+  const r = input.diameter / 2 / 100;
+  const volEach = Math.PI * r * r * input.depth;
+  const vol = input.count * volEach;
+  const mix = CONCRETE_MIX[input.grade];
+  const bags = Math.ceil((vol * mix.cement) / 50);
+  const steel = vol * STEEL_RATIO.pilotin;
+
+  return {
+    rows: [
+      { label: "Volumen por pilotín", value: `${nf(volEach, 3)} m³`, hint: `Ø${input.diameter} cm × ${nf(input.depth, 1)} m` },
+      { label: "Volumen total", value: `${nf(vol, 2)} m³`, hint: `${input.count} pilotín(es)` },
+      { label: "Cemento", value: `${bags} bolsas` },
+      { label: "Arena", value: `${nf(vol * mix.sand, 2)} m³` },
+      { label: "Piedra", value: `${nf(vol * mix.gravel, 2)} m³` },
+      { label: "Hierro estimado", value: `${nf(steel)} kg`, hint: "~100 kg/m³" },
+    ],
+    note: `Pilotines de hormigón ${mix.label}. Estimación de material; el armado surge del cálculo estructural.`,
+  };
+}
+
+// ---------------------------------------------------------------- STEEL (hierro / armadura)
+export type StructElement = "losa" | "viga" | "columna" | "base" | "platea" | "encadenado";
+
+export function calcSteel(input: {
+  element: StructElement;
+  volume: number; // m³ de hormigón
+}): CalcResult {
+  const ratio = STEEL_RATIO[input.element];
+  const kg = input.volume * ratio;
+  const wire = Math.ceil(kg * 0.01); // alambre de atar ~1%
+  const barKgO10 = 0.617 * 12; // barra Ø10 de 12 m ≈ 7,4 kg
+  const barsO10 = Math.ceil(kg / barKgO10);
+
+  return {
+    rows: [
+      { label: "Hierro estimado", value: `${nf(kg)} kg`, hint: `${ratio} kg/m³ para ${input.element}` },
+      { label: "Alambre de atar", value: `${nf(wire)} kg`, hint: "~1% del peso de acero" },
+      { label: "Referencia en barras", value: `≈ ${barsO10} barras`, hint: "equivalente en Ø10 de 12 m" },
+    ],
+    note: "Cuantía orientativa por m³. El diámetro y la cantidad exacta de barras dependen del cálculo estructural.",
+  };
+}
+
+// ---------------------------------------------------------------- PLASTER (revoque)
+export type PlasterType = "grueso" | "fino" | "completo" | "monocapa";
+
+export function calcPlaster(input: {
+  area: number;
+  type: PlasterType;
+  waste: number;
+}): CalcResult {
+  const f = 1 + input.waste / 100;
+  const rows: ResultRow[] = [
+    { label: "Superficie a revocar", value: `${nf(input.area, 2)} m²` },
+  ];
+  let note: string;
+
+  if (input.type === "monocapa") {
+    const kg = input.area * 20 * f; // ~20 kg/m² a 1,5 cm
+    rows.push({ label: "Revoque monocapa", value: `${Math.ceil(kg / 30)} bolsas`, hint: `${nf(kg)} kg · bolsas de 30 kg` });
+    note = "Revoque monocapa aplicado a ~1,5 cm. Reemplaza grueso y fino en una sola capa.";
+  } else {
+    const doGrueso = input.type === "grueso" || input.type === "completo";
+    const doFino = input.type === "fino" || input.type === "completo";
+    if (doGrueso) {
+      const vol = input.area * 0.02 * f; // 2 cm
+      rows.push({ label: "Cemento (grueso)", value: `${Math.ceil(vol * 6)} bolsas`, hint: "revoque grueso 2 cm" });
+      rows.push({ label: "Cal (grueso)", value: `${Math.ceil((vol * 90) / 25)} bolsas`, hint: "cal hidratada" });
+      rows.push({ label: "Arena (grueso)", value: `${nf(vol * 1.0, 2)} m³` });
+    }
+    if (doFino) {
+      const vol = input.area * 0.005 * f; // 0,5 cm
+      rows.push({ label: "Cal fina (fino)", value: `${Math.ceil((vol * 200) / 25)} bolsas`, hint: "revoque fino a la cal 0,5 cm" });
+      rows.push({ label: "Arena fina (fino)", value: `${nf(vol * 1.0, 2)} m³` });
+    }
+    note = "Revoque tradicional. 'Completo' incluye grueso + fino. Ajustá el espesor según la pared.";
+  }
+
+  return { rows, note };
+}
+
+// ---------------------------------------------------------------- ROOF SHEET (chapa)
+export function calcRoofSheet(input: {
+  slope: number; // largo del faldón (m)
+  width: number; // ancho a cubrir (m)
+  usefulWidth: number; // ancho útil de la chapa (m)
+  screwsPerM2: number;
+}): CalcResult {
+  const area = input.slope * input.width;
+  const sheets = Math.ceil(input.width / input.usefulWidth);
+  const linearM = sheets * input.slope;
+  const screws = Math.ceil(area * input.screwsPerM2);
+  const purlins = Math.ceil(input.slope / 1.2) + 1;
+  const purlinM = purlins * input.width;
+
+  return {
+    rows: [
+      { label: "Superficie de techo", value: `${nf(area, 2)} m²` },
+      { label: "Chapas", value: `${sheets} u`, hint: `de ${nf(input.slope, 1)} m de largo` },
+      { label: "Metros lineales de chapa", value: `${nf(linearM, 1)} m` },
+      { label: "Tornillos autoperforantes", value: `${nf(screws)} u`, hint: `~${input.screwsPerM2}/m²` },
+      { label: "Correas / clavaderas", value: `${nf(purlinM, 1)} m`, hint: `${purlins} líneas cada ~1,2 m` },
+    ],
+    note: "Ancho útil típico: sinusoidal ~0,98 m, trapezoidal ~1,00 m. Respetá el solape lateral y longitudinal.",
+  };
+}
+
+// ---------------------------------------------------------------- CONTRAPISO
+export function calcContrapiso(input: {
+  area: number;
+  thickness: number; // cm
+  waste: number;
+}): CalcResult {
+  const vol = input.area * (input.thickness / 100) * (1 + input.waste / 100);
+
+  return {
+    rows: [
+      { label: "Volumen de contrapiso", value: `${nf(vol, 2)} m³`, hint: `${nf(input.area, 2)} m² × ${nf(input.thickness, 0)} cm` },
+      { label: "Cemento", value: `${Math.ceil(vol * 5)} bolsas`, hint: "bolsas de 50 kg" },
+      { label: "Cal", value: `${Math.ceil(vol * 1)} bolsas`, hint: "cal hidratada 25 kg" },
+      { label: "Arena", value: `${nf(vol * 0.45, 2)} m³` },
+      { label: "Cascote / piedra", value: `${nf(vol * 0.9, 2)} m³` },
+    ],
+    note: "Contrapiso de cascote. Para contrapiso alivianado o bajo cerámica ajustá la dosificación.",
+  };
+}
+
 // ---------------------------------------------------------------- FLOORING
 export function calcFlooring(input: {
   length: number;
