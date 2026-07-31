@@ -8,31 +8,49 @@ import {
   ArrowRight,
   Sparkles,
   Calculator,
+  Wallet,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { SaveButton } from "@/components/member/save-button";
 import { DeleteCalcButton } from "@/components/member/delete-calc-button";
 import { getMemberSession } from "@/lib/member-auth";
 import { getSavedItems, getSavedCalculations } from "@/lib/queries";
+import { estimateBudget } from "@/lib/budget";
+import { formatCurrency } from "@/lib/utils";
 import type { SaveItemInput } from "@/components/member/save-button";
 
-// Parsea el resultado guardado. Soporta el formato nuevo (filas label/value)
-// y el viejo (objeto clave→número) por compatibilidad.
-function parseCalcRows(raw: string): { label: string; value: string }[] {
+// Parsea el resultado guardado. Soporta el formato nuevo ({ rows, budget }),
+// el intermedio (array de filas) y el viejo (objeto clave→número).
+function parseCalcResult(raw: string): {
+  rows: { label: string; value: string }[];
+  budget: { key: string; qty: number }[];
+} {
   try {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
-      return parsed.map((r) => ({
-        label: String(r.label ?? ""),
-        value: String(r.value ?? ""),
-      }));
+      return {
+        rows: parsed.map((r) => ({ label: String(r.label ?? ""), value: String(r.value ?? "") })),
+        budget: [],
+      };
     }
-    return Object.entries(parsed).map(([label, value]) => ({
-      label: label.replace(/_/g, " "),
-      value: String(value),
-    }));
+    if (parsed && Array.isArray(parsed.rows)) {
+      return {
+        rows: parsed.rows.map((r: { label?: unknown; value?: unknown }) => ({
+          label: String(r.label ?? ""),
+          value: String(r.value ?? ""),
+        })),
+        budget: Array.isArray(parsed.budget) ? parsed.budget : [],
+      };
+    }
+    return {
+      rows: Object.entries(parsed).map(([label, value]) => ({
+        label: label.replace(/_/g, " "),
+        value: String(value),
+      })),
+      budget: [],
+    };
   } catch {
-    return [];
+    return { rows: [], budget: [] };
   }
 }
 
@@ -201,7 +219,8 @@ export default async function MiCuentaPage() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {calculations.map((calc) => {
-                    const rows = parseCalcRows(calc.result);
+                    const { rows, budget } = parseCalcResult(calc.result);
+                    const est = estimateBudget(budget);
                     return (
                       <div
                         key={calc.id}
@@ -234,6 +253,16 @@ export default async function MiCuentaPage() {
                             </div>
                           ))}
                         </div>
+                        {est.total > 0 && (
+                          <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-amber-50 px-3 py-2.5">
+                            <span className="flex items-center gap-1.5 text-xs font-medium text-ink-700">
+                              <Wallet className="h-3.5 w-3.5 text-amber-600" /> Total estimado
+                            </span>
+                            <span className="font-display text-sm font-bold text-amber-600">
+                              {formatCurrency(est.total)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -247,9 +276,9 @@ export default async function MiCuentaPage() {
         <div className="mt-12 flex items-start gap-3 rounded-2xl border border-ink-100 bg-concrete-50 p-5">
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
           <p className="text-sm text-ink-500">
-            <span className="font-medium text-ink-700">Próximamente:</span> vas a
-            poder guardar cálculos de materiales, seguir precios del comparador y
-            recibir alertas. Estamos sumando beneficios para usuarios registrados.
+            <span className="font-medium text-ink-700">Próximamente:</span> alertas
+            cuando bajen los precios de tus materiales y presupuestos compartibles
+            por link. Seguimos sumando beneficios para usuarios registrados.
           </p>
         </div>
       </section>

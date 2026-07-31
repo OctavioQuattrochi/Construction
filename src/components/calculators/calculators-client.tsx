@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Input, Label, Select } from "@/components/ui/field";
 import { SaveCalculationButton } from "@/components/calculators/save-calculation-button";
+import { BudgetPanel } from "@/components/calculators/budget-panel";
 import { cn } from "@/lib/utils";
 import {
   calcConcrete,
@@ -696,11 +697,17 @@ export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) 
                     1
                   }
                   rows={result.rows}
+                  budget={result.budget ?? []}
                   isMember={isMember}
                 />
               </div>
             )}
           </div>
+
+          {/* Presupuesto estimado */}
+          {result && (
+            <BudgetPanel budget={result.budget ?? []} isMember={isMember} />
+          )}
         </div>
       </div>
     </div>

@@ -14,6 +14,10 @@ const schema = z.object({
     .array(z.object({ label: z.string().max(120), value: z.string().max(120) }))
     .min(1)
     .max(20),
+  budget: z
+    .array(z.object({ key: z.string().max(40), qty: z.number() }))
+    .max(30)
+    .optional(),
 });
 
 export async function POST(req: Request) {
@@ -34,7 +38,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Datos inválidos." }, { status: 400 });
   }
 
-  const { name, calcType, calcName, quantity, rows } = parsed.data;
+  const { name, calcType, calcName, quantity, rows, budget } = parsed.data;
 
   try {
     const calc = await db.savedCalculation.create({
@@ -43,7 +47,7 @@ export async function POST(req: Request) {
         name,
         calcType: calcName || calcType,
         quantity,
-        result: JSON.stringify(rows),
+        result: JSON.stringify({ rows, budget: budget ?? [] }),
       },
     });
     return NextResponse.json({ id: calc.id });

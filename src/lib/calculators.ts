@@ -6,9 +6,15 @@ export interface ResultRow {
   value: string;
   hint?: string;
 }
+// Item presupuestable: material canónico + cantidad (el precio se resuelve aparte).
+export interface BudgetItem {
+  key: string;
+  qty: number;
+}
 export interface CalcResult {
   rows: ResultRow[];
   note?: string;
+  budget?: BudgetItem[];
 }
 
 const nf = (n: number, d = 0) =>
@@ -52,6 +58,11 @@ export function calcConcrete(input: {
       { label: "Piedra / grava", value: `${nf(total * mix.gravel, 2)} m³` },
       { label: "Agua", value: `${nf(total * mix.water)} L` },
     ],
+    budget: [
+      { key: "cemento", qty: bags },
+      { key: "arena", qty: total * mix.sand },
+      { key: "piedra", qty: total * mix.gravel },
+    ],
     note: `Dosificación ${mix.label}. Valores orientativos para hormigón elaborado in situ.`,
   };
 }
@@ -84,6 +95,12 @@ export function calcBricks(input: {
   // Mortar 1:4 → cement ~7.5 bags/m³, sand ~1.05 m³/m³
   const cementBags = Math.ceil(mortar * 7.5);
   const sand = mortar * 1.05;
+  const brickKey: Record<BrickType, string> = {
+    hueco12: "ladrillo_hueco12",
+    hueco18: "ladrillo_hueco18",
+    comun: "ladrillo_comun",
+    bloque19: "bloque",
+  };
 
   return {
     rows: [
@@ -92,6 +109,11 @@ export function calcBricks(input: {
       { label: "Mortero de asiento", value: `${nf(mortar, 2)} m³` },
       { label: "Cemento (mortero)", value: `${cementBags} bolsas`, hint: "bolsas de 50 kg" },
       { label: "Arena (mortero)", value: `${nf(sand, 2)} m³` },
+    ],
+    budget: [
+      { key: brickKey[type], qty: units },
+      { key: "cemento", qty: cementBags },
+      { key: "arena", qty: sand },
     ],
     note: "Mortero de asiento 1:4. Estimación para muro de un ladrillo de espesor.",
   };
@@ -128,10 +150,16 @@ export function calcMortar(input: {
     { label: "Cemento", value: `${cementBags} bolsas`, hint: "bolsas de 50 kg" },
     { label: "Arena", value: `${nf(sand, 2)} m³` },
   ];
+  const budget: BudgetItem[] = [
+    { key: "cemento", qty: cementBags },
+    { key: "arena", qty: sand },
+  ];
   if (limeKg > 0) {
-    rows.push({ label: "Cal", value: `${Math.ceil(limeKg / 25)} bolsas`, hint: `${nf(limeKg)} kg · bolsas de 25 kg` });
+    const limeBags = Math.ceil(limeKg / 25);
+    rows.push({ label: "Cal", value: `${limeBags} bolsas`, hint: `${nf(limeKg)} kg · bolsas de 25 kg` });
+    budget.push({ key: "cal", qty: limeBags });
   }
-  return { rows, note: `${spec.label}. Espesor sugerido ${spec.thickness} cm.` };
+  return { rows, budget, note: `${spec.label}. Espesor sugerido ${spec.thickness} cm.` };
 }
 
 // ---------------------------------------------------------------- PAINT
@@ -153,6 +181,7 @@ export function calcPaint(input: {
       { label: "Pintura necesaria", value: `${nf(liters, 1)} L`, hint: `Rendimiento ${input.yield} m²/L` },
       { label: "Equivale a", value: `${buckets20} balde(s) de 20 L`, hint: `o ${cans4} lata(s) de 4 L` },
     ],
+    budget: [{ key: "pintura", qty: buckets20 }],
     note: "Incluye desperdicio. El rendimiento real varía según la absorción de la superficie.",
   };
 }
@@ -174,6 +203,7 @@ export function calcMembrane(input: {
       { label: "Membrana asfáltica", value: `${rolls} rollo(s)`, hint: "rollos de 10 m² (10 m x 1 m)" },
       { label: "Imprimación asfáltica", value: `${nf(primerL, 1)} L`, hint: "~0,3 L/m² · pintura asfáltica base" },
     ],
+    budget: [{ key: "membrana", qty: rolls }],
     note: "Estimación para membrana de 40 kg. Respetá el solape mínimo de 8–10 cm entre rollos.",
   };
 }
@@ -203,6 +233,10 @@ export function calcDrywall(input: {
       { label: "Masilla", value: `${nf(masilla, 1)} kg` },
       { label: "Cinta de juntas", value: `${nf(cinta)} m` },
     ],
+    budget: [
+      { key: "placa_yeso", qty: plates },
+      { key: "perfil", qty: montantes + soleras },
+    ],
     note: "Tabique estándar con estructura de perfiles galvanizados. Sumá aislante si corresponde.",
   };
 }
@@ -225,6 +259,7 @@ export function calcSkirting(input: {
       { label: "Piezas de zócalo", value: `${pieces} u`, hint: `piezas de ${nf(input.pieceLength, 2)} m` },
       { label: "Adhesivo / cemento de contacto", value: `${adhesive} pomo(s)`, hint: "estimado" },
     ],
+    budget: [{ key: "zocalo", qty: pieces }],
     note: "Medí el perímetro del ambiente y descontá el ancho de las puertas.",
   };
 }
@@ -284,6 +319,12 @@ export function calcFoundation(input: {
       { label: "Piedra", value: `${nf(vol * mix.gravel, 2)} m³` },
       { label: "Hierro estimado", value: `${nf(steel)} kg`, hint: "~85 kg/m³ · según cálculo estructural" },
     ],
+    budget: [
+      { key: "cemento", qty: bags },
+      { key: "arena", qty: vol * mix.sand },
+      { key: "piedra", qty: vol * mix.gravel },
+      { key: "hierro", qty: Math.ceil(steel / (0.617 * 12)) },
+    ],
     note: `Hormigón ${mix.label}. El armado de hierro depende del cálculo estructural; tomá el valor como referencia.`,
   };
 }
@@ -311,6 +352,12 @@ export function calcPiles(input: {
       { label: "Piedra", value: `${nf(vol * mix.gravel, 2)} m³` },
       { label: "Hierro estimado", value: `${nf(steel)} kg`, hint: "~100 kg/m³" },
     ],
+    budget: [
+      { key: "cemento", qty: bags },
+      { key: "arena", qty: vol * mix.sand },
+      { key: "piedra", qty: vol * mix.gravel },
+      { key: "hierro", qty: Math.ceil(steel / (0.617 * 12)) },
+    ],
     note: `Pilotines de hormigón ${mix.label}. Estimación de material; el armado surge del cálculo estructural.`,
   };
 }
@@ -334,6 +381,7 @@ export function calcSteel(input: {
       { label: "Alambre de atar", value: `${nf(wire)} kg`, hint: "~1% del peso de acero" },
       { label: "Referencia en barras", value: `≈ ${barsO10} barras`, hint: "equivalente en Ø10 de 12 m" },
     ],
+    budget: [{ key: "hierro", qty: barsO10 }],
     note: "Cuantía orientativa por m³. El diámetro y la cantidad exacta de barras dependen del cálculo estructural.",
   };
 }
@@ -350,30 +398,43 @@ export function calcPlaster(input: {
   const rows: ResultRow[] = [
     { label: "Superficie a revocar", value: `${nf(input.area, 2)} m²` },
   ];
+  const budget: BudgetItem[] = [];
   let note: string;
 
   if (input.type === "monocapa") {
-    const kg = input.area * 20 * f; // ~20 kg/m² a 1,5 cm
-    rows.push({ label: "Revoque monocapa", value: `${Math.ceil(kg / 30)} bolsas`, hint: `${nf(kg)} kg · bolsas de 30 kg` });
+    const bags = Math.ceil((input.area * 20 * f) / 30); // ~20 kg/m² a 1,5 cm, bolsas 30 kg
+    rows.push({ label: "Revoque monocapa", value: `${bags} bolsas`, hint: `bolsas de 30 kg` });
+    budget.push({ key: "monocapa", qty: bags });
     note = "Revoque monocapa aplicado a ~1,5 cm. Reemplaza grueso y fino en una sola capa.";
   } else {
     const doGrueso = input.type === "grueso" || input.type === "completo";
     const doFino = input.type === "fino" || input.type === "completo";
+    let cementBags = 0;
+    let limeBags = 0;
+    let sandM3 = 0;
     if (doGrueso) {
       const vol = input.area * 0.02 * f; // 2 cm
+      cementBags += Math.ceil(vol * 6);
+      limeBags += Math.ceil((vol * 90) / 25);
+      sandM3 += vol * 1.0;
       rows.push({ label: "Cemento (grueso)", value: `${Math.ceil(vol * 6)} bolsas`, hint: "revoque grueso 2 cm" });
       rows.push({ label: "Cal (grueso)", value: `${Math.ceil((vol * 90) / 25)} bolsas`, hint: "cal hidratada" });
       rows.push({ label: "Arena (grueso)", value: `${nf(vol * 1.0, 2)} m³` });
     }
     if (doFino) {
       const vol = input.area * 0.005 * f; // 0,5 cm
+      limeBags += Math.ceil((vol * 200) / 25);
+      sandM3 += vol * 1.0;
       rows.push({ label: "Cal fina (fino)", value: `${Math.ceil((vol * 200) / 25)} bolsas`, hint: "revoque fino a la cal 0,5 cm" });
       rows.push({ label: "Arena fina (fino)", value: `${nf(vol * 1.0, 2)} m³` });
     }
+    if (cementBags > 0) budget.push({ key: "cemento", qty: cementBags });
+    if (limeBags > 0) budget.push({ key: "cal", qty: limeBags });
+    if (sandM3 > 0) budget.push({ key: "arena", qty: sandM3 });
     note = "Revoque tradicional. 'Completo' incluye grueso + fino. Ajustá el espesor según la pared.";
   }
 
-  return { rows, note };
+  return { rows, budget, note };
 }
 
 // ---------------------------------------------------------------- ROOF SHEET (chapa)
@@ -398,6 +459,7 @@ export function calcRoofSheet(input: {
       { label: "Tornillos autoperforantes", value: `${nf(screws)} u`, hint: `~${input.screwsPerM2}/m²` },
       { label: "Correas / clavaderas", value: `${nf(purlinM, 1)} m`, hint: `${purlins} líneas cada ~1,2 m` },
     ],
+    budget: [{ key: "chapa", qty: linearM }],
     note: "Ancho útil típico: sinusoidal ~0,98 m, trapezoidal ~1,00 m. Respetá el solape lateral y longitudinal.",
   };
 }
@@ -417,6 +479,12 @@ export function calcContrapiso(input: {
       { label: "Cal", value: `${Math.ceil(vol * 1)} bolsas`, hint: "cal hidratada 25 kg" },
       { label: "Arena", value: `${nf(vol * 0.45, 2)} m³` },
       { label: "Cascote / piedra", value: `${nf(vol * 0.9, 2)} m³` },
+    ],
+    budget: [
+      { key: "cemento", qty: Math.ceil(vol * 5) },
+      { key: "cal", qty: Math.ceil(vol * 1) },
+      { key: "arena", qty: vol * 0.45 },
+      { key: "cascote", qty: vol * 0.9 },
     ],
     note: "Contrapiso de cascote. Para contrapiso alivianado o bajo cerámica ajustá la dosificación.",
   };
@@ -444,6 +512,10 @@ export function calcFlooring(input: {
       { label: "Piezas necesarias", value: `${nf(pieces)} unidades`, hint: `${input.pieceW}×${input.pieceH} cm` },
       { label: "Cajas", value: `${boxes} caja(s)`, hint: `${input.perBox} piezas/caja · ${nf(m2PerBox, 2)} m²/caja` },
       { label: "Adhesivo estimado", value: `${Math.ceil((areaWithWaste * 4.5) / 30)} bolsas`, hint: "~4,5 kg/m² · bolsas de 30 kg" },
+    ],
+    budget: [
+      { key: "ceramico", qty: areaWithWaste },
+      { key: "adhesivo", qty: Math.ceil((areaWithWaste * 4.5) / 30) },
     ],
     note: "Se recomienda comprar todas las cajas del mismo lote para evitar diferencias de tono.",
   };

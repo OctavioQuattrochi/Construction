@@ -10,18 +10,24 @@ export interface CalcRow {
   label: string;
   value: string;
 }
+export interface BudgetItemInput {
+  key: string;
+  qty: number;
+}
 
 export function SaveCalculationButton({
   calcType,
   calcName,
   quantity,
   rows,
+  budget,
   isMember,
 }: {
   calcType: string;
   calcName: string;
   quantity: number;
   rows: CalcRow[];
+  budget: BudgetItemInput[];
   isMember: boolean;
 }) {
   const router = useRouter();
@@ -51,6 +57,7 @@ export function SaveCalculationButton({
           calcName,
           quantity,
           rows: cleanRows,
+          budget,
         }),
       });
       const json = await res.json();
