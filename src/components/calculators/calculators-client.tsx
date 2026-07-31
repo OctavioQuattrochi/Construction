@@ -14,6 +14,7 @@ import {
   Rows3,
 } from "lucide-react";
 import { Input, Label, Select } from "@/components/ui/field";
+import { SaveCalculationButton } from "@/components/calculators/save-calculation-button";
 import { cn } from "@/lib/utils";
 import {
   calcConcrete,
@@ -260,7 +261,7 @@ function initialValues(def: CalcDef): Record<string, number | string> {
   return Object.fromEntries(def.fields.map((f) => [f.key, f.default]));
 }
 
-export function CalculatorsClient() {
+export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) {
   const [activeId, setActiveId] = useState(CALCS[0].id);
   const active = CALCS.find((c) => c.id === activeId)!;
   const [values, setValues] = useState(() => initialValues(active));
@@ -272,6 +273,17 @@ export function CalculatorsClient() {
       return null;
     }
   }, [active, values]);
+
+  // Para guardar: convertir los rows del resultado a un object
+  const resultData = useMemo(() => {
+    if (!result) return {};
+    return Object.fromEntries(
+      result.rows.map((row) => {
+        const num = parseFloat(row.value.replace(/[^\d.,]/g, "").replace(",", "."));
+        return [row.label.toLowerCase().replace(/\s+/g, "_"), num || 0];
+      })
+    );
+  }, [result]);
 
   function switchTo(id: string) {
     const def = CALCS.find((c) => c.id === id)!;
@@ -426,6 +438,23 @@ export function CalculatorsClient() {
               <p className="border-t border-white/10 px-6 py-4 text-xs leading-relaxed text-concrete-400">
                 {result.note}
               </p>
+            )}
+
+            {result && (
+              <div className="border-t border-white/10 px-6 py-4">
+                <SaveCalculationButton
+                  calcType={activeId}
+                  quantity={
+                    Number(values.length) ||
+                    Number(values.area) ||
+                    Number(values.perimeter) ||
+                    Number(values.width) ||
+                    1
+                  }
+                  result={resultData}
+                  isMember={isMember}
+                />
+              </div>
             )}
           </div>
         </div>

@@ -7,11 +7,14 @@ import {
   Heart,
   ArrowRight,
   Sparkles,
+  Calculator,
+  Trash2,
+  DollarSign,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { SaveButton } from "@/components/member/save-button";
 import { getMemberSession } from "@/lib/member-auth";
-import { getSavedItems } from "@/lib/queries";
+import { getSavedItems, getSavedCalculations } from "@/lib/queries";
 import type { SaveItemInput } from "@/components/member/save-button";
 
 export const metadata: Metadata = {
@@ -26,11 +29,25 @@ const sections = [
   { type: "professional", label: "Profesionales guardados", icon: Users },
 ] as const;
 
+const calcNames: Record<string, string> = {
+  hormigon: "Hormigón",
+  ladrillos: "Ladrillos",
+  mortero: "Mortero",
+  pintura: "Pintura",
+  piso: "Piso",
+  membrana: "Membrana",
+  durlock: "Durlock",
+  zocalos: "Zócalos",
+};
+
 export default async function MiCuentaPage() {
   const member = await getMemberSession();
   if (!member) redirect("/ingresar");
 
-  const items = await getSavedItems(member.id);
+  const [items, calculations] = await Promise.all([
+    getSavedItems(member.id),
+    getSavedCalculations(member.id),
+  ]);
   const byType = (t: string) => items.filter((i) => i.type === t);
   const firstName = member.name.split(" ")[0];
 
@@ -48,7 +65,7 @@ export default async function MiCuentaPage() {
       />
 
       <section className="container-x py-12">
-        {items.length === 0 ? (
+        {items.length === 0 && calculations.length === 0 ? (
           <div className="flex flex-col items-center rounded-3xl border border-dashed border-ink-200 bg-white p-12 text-center">
             <Heart className="h-12 w-12 text-ink-300" />
             <h2 className="mt-4 font-display text-xl font-semibold text-ink-900">
@@ -75,68 +92,137 @@ export default async function MiCuentaPage() {
           </div>
         ) : (
           <div className="space-y-12">
-            {sections.map((section) => {
-              const list = byType(section.type);
-              if (list.length === 0) return null;
-              return (
-                <div key={section.type}>
-                  <div className="mb-5 flex items-center gap-2">
-                    <section.icon className="h-5 w-5 text-amber-500" />
-                    <h2 className="font-display text-xl font-bold text-ink-900">
-                      {section.label}
-                    </h2>
-                    <span className="rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-500">
-                      {list.length}
-                    </span>
-                  </div>
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {list.map((item) => {
-                      const input: SaveItemInput = {
-                        type: item.type as SaveItemInput["type"],
-                        refId: item.refId,
-                        title: item.title,
-                        subtitle: item.subtitle ?? undefined,
-                        href: item.href ?? undefined,
-                        image: item.image ?? undefined,
-                      };
-                      return (
-                        <div
-                          key={item.id}
-                          className="group flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-3 shadow-soft"
-                        >
-                          {item.image ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.image}
-                              alt=""
-                              className="h-14 w-14 shrink-0 rounded-xl object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-ink-300">
-                              <section.icon className="h-5 w-5" />
-                            </div>
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <Link
-                              href={item.href || "#"}
-                              className="line-clamp-1 font-medium text-ink-900 hover:text-amber-700"
+            {/* Favoritos */}
+            {items.length > 0 && (
+              <div>
+                {sections.map((section) => {
+                  const list = byType(section.type);
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={section.type}>
+                      <div className="mb-5 flex items-center gap-2">
+                        <section.icon className="h-5 w-5 text-amber-500" />
+                        <h2 className="font-display text-xl font-bold text-ink-900">
+                          {section.label}
+                        </h2>
+                        <span className="rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-500">
+                          {list.length}
+                        </span>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {list.map((item) => {
+                          const input: SaveItemInput = {
+                            type: item.type as SaveItemInput["type"],
+                            refId: item.refId,
+                            title: item.title,
+                            subtitle: item.subtitle ?? undefined,
+                            href: item.href ?? undefined,
+                            image: item.image ?? undefined,
+                          };
+                          return (
+                            <div
+                              key={item.id}
+                              className="group flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-3 shadow-soft"
                             >
-                              {item.title}
-                            </Link>
-                            {item.subtitle && (
-                              <p className="line-clamp-1 text-sm text-ink-400">
-                                {item.subtitle}
-                              </p>
-                            )}
-                          </div>
-                          <SaveButton isMember initialSaved item={input} />
-                        </div>
-                      );
-                    })}
-                  </div>
+                              {item.image ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={item.image}
+                                  alt=""
+                                  className="h-14 w-14 shrink-0 rounded-xl object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-ink-300">
+                                  <section.icon className="h-5 w-5" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <Link
+                                  href={item.href || "#"}
+                                  className="line-clamp-1 font-medium text-ink-900 hover:text-amber-700"
+                                >
+                                  {item.title}
+                                </Link>
+                                {item.subtitle && (
+                                  <p className="line-clamp-1 text-sm text-ink-400">
+                                    {item.subtitle}
+                                  </p>
+                                )}
+                              </div>
+                              <SaveButton isMember initialSaved item={input} />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Presupuestos guardados */}
+            {calculations.length > 0 && (
+              <div>
+                <div className="mb-5 flex items-center gap-2">
+                  <Calculator className="h-5 w-5 text-amber-500" />
+                  <h2 className="font-display text-xl font-bold text-ink-900">
+                    Cálculos guardados
+                  </h2>
+                  <span className="rounded-full bg-ink-100 px-2 py-0.5 text-xs font-medium text-ink-500">
+                    {calculations.length}
+                  </span>
                 </div>
-              );
-            })}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {calculations.map((calc) => {
+                    const data = JSON.parse(calc.result) as Record<string, number>;
+                    return (
+                      <div
+                        key={calc.id}
+                        className="flex flex-col rounded-2xl border border-ink-100 bg-white p-5 shadow-soft"
+                      >
+                        <h3 className="line-clamp-2 font-display text-sm font-bold text-ink-900">
+                          {calc.name}
+                        </h3>
+                        <p className="mt-1 text-xs text-ink-400">
+                          {calcNames[calc.calcType] || calc.calcType}
+                        </p>
+                        <div className="mt-4 space-y-2 border-t border-ink-100 pt-3">
+                          {Object.entries(data).slice(0, 4).map(([key, val]) => (
+                            <div
+                              key={key}
+                              className="flex items-center justify-between text-xs"
+                            >
+                              <span className="text-ink-500 capitalize">
+                                {key.replace(/_/g, " ")}
+                              </span>
+                              <span className="font-mono font-semibold text-ink-900">
+                                {val.toFixed(1)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={async () => {
+                            if (
+                              confirm("¿Eliminar este cálculo?")
+                            ) {
+                              await fetch(
+                                `/api/calculations?id=${calc.id}`,
+                                { method: "DELETE" }
+                              );
+                              location.reload();
+                            }
+                          }}
+                          className="mt-4 flex items-center justify-center gap-1 rounded-lg bg-red-50 py-2 text-xs font-medium text-red-600 hover:bg-red-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

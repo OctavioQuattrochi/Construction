@@ -99,14 +99,15 @@ model Subscriber {
 
 // Public members (registered via Google, etc.). Separate from admin `User`.
 model Member {
-  id         String      @id @default(cuid())
-  email      String      @unique
-  name       String
-  image      String?
-  provider   String      @default("google")
-  savedItems SavedItem[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id            String               @id @default(cuid())
+  email         String               @unique
+  name          String
+  image         String?
+  provider      String               @default("google")
+  savedItems    SavedItem[]
+  calculations  SavedCalculation[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 }
 
 // Favoritos guardados por un miembro (inmuebles, profesionales, etc.).
@@ -123,6 +124,21 @@ model SavedItem {
   createdAt DateTime @default(now())
 
   @@unique([memberId, type, refId])
+  @@index([memberId])
+}
+
+// Cálculos de materiales guardados (presupuestos estimados).
+model SavedCalculation {
+  id        String   @id @default(cuid())
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  name      String // "Casa de 100m²", "Amurado del patio", etc.
+  calcType  String // "h17" | "h21" | "h30" | "ladrillo" | "bloque" | etc.
+  quantity  Float // cantidad base (m² o kg o m³)
+  result    String // JSON: { cemento: 10, arena: 20, ... } (Cantidad total de material)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([memberId])
 }
 

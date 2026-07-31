@@ -165,6 +165,18 @@ export async function getSavedItems(memberId: string) {
   }
 }
 
+// ------------------------------------------------------------- CALCULATIONS
+export async function getSavedCalculations(memberId: string) {
+  try {
+    return await db.savedCalculation.findMany({
+      where: { memberId },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function getRelatedArticles(articleId: string, categoryId: string | null) {
   try {
     return await db.article.findMany({

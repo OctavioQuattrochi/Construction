@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { CalculatorsClient } from "@/components/calculators/calculators-client";
+import { getMemberSession } from "@/lib/member-auth";
 
 export const metadata: Metadata = {
   title: "Calculadoras de construcción",
@@ -8,7 +9,11 @@ export const metadata: Metadata = {
     "Calculadoras de materiales: hormigón, ladrillos, mortero, pintura y pisos. Estimá cuánto material necesitás para tu obra al instante.",
 };
 
-export default function CalculadorasPage() {
+export const dynamic = "force-dynamic";
+
+export default async function CalculadorasPage() {
+  const member = await getMemberSession();
+
   return (
     <>
       <PageHeader
@@ -23,7 +28,7 @@ export default function CalculadorasPage() {
       />
 
       <section className="container-x -mt-6 pb-24">
-        <CalculatorsClient />
+        <CalculatorsClient isMember={Boolean(member)} />
       </section>
     </>
   );
