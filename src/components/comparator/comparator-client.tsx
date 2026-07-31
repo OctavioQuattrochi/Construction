@@ -14,6 +14,8 @@ import {
   ArrowDownWideNarrow,
   SlidersHorizontal,
   X,
+  Store,
+  ChevronDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ import type {
   NormalizedProduct,
   Availability,
 } from "@/lib/providers/types";
+import { productMatch } from "@/lib/providers/match";
 
 const SUGGESTIONS = [
   "cemento",
@@ -46,20 +49,23 @@ type Grouped = {
   category: string | null;
   packageSize: string | null;
   offers: NormalizedProduct[];
+  stores: number;
   min: number | null;
   max: number | null;
   savings: number;
 };
 
 function groupClient(products: NormalizedProduct[]): Grouped[] {
-  const map = new Map<string, NormalizedProduct[]>();
+  // Agrupa el MISMO producto entre tiendas (por tipo+medida), no por SKU.
+  const map = new Map<string, { items: NormalizedProduct[]; label: string | null }>();
   for (const p of products) {
-    const list = map.get(p.sku) ?? [];
-    list.push(p);
-    map.set(p.sku, list);
+    const m = productMatch(p);
+    const entry = map.get(m.key) ?? { items: [], label: m.label };
+    entry.items.push(p);
+    map.set(m.key, entry);
   }
   return Array.from(map.entries())
-    .map(([sku, items]) => {
+    .map(([key, { items, label }]) => {
       const offers = [...items].sort((a, b) => {
         if (a.price == null) return 1;
         if (b.price == null) return -1;
@@ -68,14 +74,18 @@ function groupClient(products: NormalizedProduct[]): Grouped[] {
       const prices = offers
         .map((o) => o.price)
         .filter((p): p is number => p != null);
+      // Cuántas tiendas distintas ofrecen este producto.
+      const stores = new Set(offers.map((o) => o.provider.id)).size;
+      const merged = Boolean(label) && stores > 1;
       return {
-        sku,
-        title: offers[0].title,
-        brand: offers[0].brand,
-        image: offers[0].image,
+        sku: key,
+        title: merged ? label! : offers[0].title,
+        brand: merged ? null : offers[0].brand,
+        image: offers.find((o) => o.image)?.image ?? null,
         category: offers[0].category,
-        packageSize: offers[0].packageSize,
+        packageSize: merged ? null : offers[0].packageSize,
         offers,
+        stores,
         min: prices.length ? Math.min(...prices) : null,
         max: prices.length ? Math.max(...prices) : null,
         savings: prices.length > 1 ? Math.max(...prices) - Math.min(...prices) : 0,
@@ -276,6 +286,39 @@ export function ComparatorClient() {
         </motion.div>
       )}
 
+      {/* Estado de proveedores (transparencia) */}
+      {data && !loading && (
+        <details className="group mt-3 rounded-2xl border border-ink-100 bg-white">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-3 text-sm font-medium text-ink-600">
+            <Store className="h-4 w-4 text-ink-400" />
+            Estado de los {data.providersQueried} proveedores
+            <ChevronDown className="ml-auto h-4 w-4 text-ink-400 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="grid gap-1.5 border-t border-ink-100 px-5 py-3 sm:grid-cols-2 lg:grid-cols-3">
+            {data.results.map((r) => (
+              <div key={r.provider.id} className="flex items-center gap-2 text-sm">
+                <span
+                  className={cn(
+                    "h-2 w-2 shrink-0 rounded-full",
+                    r.live ? "bg-emerald-500" : "bg-ink-300"
+                  )}
+                />
+                <span className="truncate text-ink-700">{r.provider.name}</span>
+                <span className="ml-auto shrink-0 text-xs text-ink-400">
+                  {r.live ? "en vivo" : "referencia"}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="border-t border-ink-100 px-5 py-2.5 text-xs text-ink-400">
+            <span className="font-medium text-emerald-600">En vivo</span> = precio
+            traído del sitio ahora ·{" "}
+            <span className="font-medium">Referencia</span> = precio orientativo
+            (la tienda no publicó ese producto online o no respondió).
+          </p>
+        </details>
+      )}
+
       {/* Filter bar */}
       {data && !loading && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -442,6 +485,12 @@ function ProductGroup({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {group.brand && <Badge>{group.brand}</Badge>}
+            {group.stores > 1 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-ink-900 px-2.5 py-0.5 text-xs font-semibold text-white">
+                <Store className="h-3 w-3 text-amber-400" />
+                {group.stores} tiendas
+              </span>
+            )}
             {group.category && (
               <span className="text-xs text-ink-400">{group.category}</span>
             )}
