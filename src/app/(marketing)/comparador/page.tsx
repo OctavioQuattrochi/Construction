@@ -16,6 +16,7 @@ export default function ComparadorPage() {
   return (
     <>
       <PageHeader
+        brandLarge
         eyebrow="Comparador de precios"
         title={
           <>
