@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Users, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
-import { ProfessionalCard } from "@/components/professionals/professional-card";
-import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
+import { ProfessionalsClient } from "@/components/professionals/professionals-client";
 import { getProfessionals, getProfessions, getSavedRefIds } from "@/lib/queries";
 import { getMemberSession } from "@/lib/member-auth";
 import { site } from "@/lib/site";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Profesionales de la construcción",
@@ -25,7 +22,7 @@ export default async function ProfesionalesPage({
 }) {
   const { p } = await searchParams;
   const [professionals, professions, member] = await Promise.all([
-    getProfessionals({ profession: p || undefined }),
+    getProfessionals(), // todos; el filtrado es en el cliente
     getProfessions(),
     getMemberSession(),
   ]);
@@ -52,38 +49,13 @@ export default async function ProfesionalesPage({
       </PageHeader>
 
       <section className="container-x py-12">
-        {professions.length > 0 && (
-          <div className="mb-8 flex flex-wrap gap-2">
-            <FilterChip href="/profesionales" active={!p}>
-              Todos
-            </FilterChip>
-            {professions.map((prof) => (
-              <FilterChip
-                key={prof}
-                href={`/profesionales?p=${encodeURIComponent(prof)}`}
-                active={p === prof}
-              >
-                {prof}
-              </FilterChip>
-            ))}
-          </div>
-        )}
-
-        {professionals.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {professionals.map((pro) => (
-              <StaggerItem key={pro.id}>
-                <ProfessionalCard
-                  pro={pro}
-                  isMember={Boolean(member)}
-                  saved={saved.has(pro.slug)}
-                />
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
-        )}
+        <ProfessionalsClient
+          professionals={professionals}
+          professions={professions}
+          isMember={Boolean(member)}
+          savedSlugs={[...saved]}
+          initialProfession={p || ""}
+        />
 
         {/* CTA para sumarse */}
         <div className="mt-14 overflow-hidden rounded-3xl bg-ink-950 p-8 text-white md:p-10">
@@ -105,43 +77,5 @@ export default async function ProfesionalesPage({
         </div>
       </section>
     </>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center rounded-3xl border border-dashed border-ink-200 bg-white p-12 text-center">
-      <Users className="h-10 w-10 text-ink-300" />
-      <h3 className="mt-4 font-display text-lg font-semibold text-ink-900">
-        Todavía no hay profesionales en esta categoría
-      </h3>
-      <p className="mt-1 text-sm text-ink-500">
-        Estamos sumando profesionales a la red. Volvé pronto.
-      </p>
-    </div>
-  );
-}
-
-function FilterChip({
-  href,
-  active,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200",
-        active
-          ? "border-ink-900 bg-ink-900 text-white"
-          : "border-ink-200 bg-white text-ink-600 hover:border-ink-400 hover:text-ink-900"
-      )}
-    >
-      {children}
-    </Link>
   );
 }

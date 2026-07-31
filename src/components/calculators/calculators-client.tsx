@@ -518,7 +518,7 @@ export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) 
         <p className="mb-2.5 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">
           Etapa de obra
         </p>
-        <div className="no-scrollbar flex gap-2 overflow-x-auto">
+        <div className="thin-scrollbar flex gap-2 overflow-x-auto pb-2">
           {CATEGORIES.map((cat) => {
             const isActive = cat === active.category;
             return (
@@ -539,7 +539,7 @@ export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) 
         </div>
 
         {/* Calculadoras de la etapa */}
-        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto border-t border-ink-100 pt-3">
+        <div className="thin-scrollbar mt-3 flex gap-2 overflow-x-auto border-t border-ink-100 pt-3 pb-1">
           {calcsInCategory.map((c) => {
             const isActive = c.id === activeId;
             return (

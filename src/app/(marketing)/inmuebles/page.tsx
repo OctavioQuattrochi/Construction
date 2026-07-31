@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { Building2, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
-import { PropertyCard } from "@/components/properties/property-card";
-import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
+import { PropertiesClient } from "@/components/properties/properties-client";
 import { getProperties, getSavedRefIds } from "@/lib/queries";
 import { getMemberSession } from "@/lib/member-auth";
 import { site } from "@/lib/site";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Inmuebles",
@@ -18,18 +15,6 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const operations = [
-  { key: "", label: "Todos" },
-  { key: "venta", label: "Venta" },
-  { key: "alquiler", label: "Alquiler" },
-];
-const types = [
-  { key: "casa", label: "Casas" },
-  { key: "departamento", label: "Deptos" },
-  { key: "lote", label: "Lotes" },
-  { key: "local", label: "Locales" },
-];
-
 export default async function InmueblesPage({
   searchParams,
 }: {
@@ -37,7 +22,7 @@ export default async function InmueblesPage({
 }) {
   const { op, type } = await searchParams;
   const [properties, member] = await Promise.all([
-    getProperties({ operation: op || undefined, type: type || undefined }),
+    getProperties(), // todos; el filtrado es en el cliente
     getMemberSession(),
   ]);
   const saved = member
@@ -63,48 +48,13 @@ export default async function InmueblesPage({
       </PageHeader>
 
       <section className="container-x py-12">
-        {/* Filtros */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap gap-2">
-            {operations.map((o) => (
-              <Chip
-                key={o.key}
-                href={buildHref(o.key, type)}
-                active={(op || "") === o.key}
-              >
-                {o.label}
-              </Chip>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {types.map((t) => (
-              <Chip
-                key={t.key}
-                href={buildHref(op, (type || "") === t.key ? "" : t.key)}
-                active={type === t.key}
-                subtle
-              >
-                {t.label}
-              </Chip>
-            ))}
-          </div>
-        </div>
-
-        {properties.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {properties.map((p) => (
-              <StaggerItem key={p.id}>
-                <PropertyCard
-                  property={p}
-                  isMember={Boolean(member)}
-                  saved={saved.has(p.slug)}
-                />
-              </StaggerItem>
-            ))}
-          </StaggerGroup>
-        )}
+        <PropertiesClient
+          properties={properties}
+          isMember={Boolean(member)}
+          savedSlugs={[...saved]}
+          initialOp={op || ""}
+          initialType={type || ""}
+        />
 
         <div className="mt-14 overflow-hidden rounded-3xl bg-ink-950 p-8 text-white md:p-10">
           <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
@@ -124,55 +74,5 @@ export default async function InmueblesPage({
         </div>
       </section>
     </>
-  );
-}
-
-function buildHref(op?: string, type?: string) {
-  const params = new URLSearchParams();
-  if (op) params.set("op", op);
-  if (type) params.set("type", type);
-  const qs = params.toString();
-  return `/inmuebles${qs ? `?${qs}` : ""}`;
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center rounded-3xl border border-dashed border-ink-200 bg-white p-12 text-center">
-      <Building2 className="h-10 w-10 text-ink-300" />
-      <h3 className="mt-4 font-display text-lg font-semibold text-ink-900">
-        No hay inmuebles para este filtro
-      </h3>
-      <p className="mt-1 text-sm text-ink-500">
-        Probá con otra operación o tipo de propiedad.
-      </p>
-    </div>
-  );
-}
-
-function Chip({
-  href,
-  active,
-  subtle,
-  children,
-}: {
-  href: string;
-  active: boolean;
-  subtle?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200",
-        active
-          ? subtle
-            ? "border-amber-500 bg-amber-500/10 text-amber-700"
-            : "border-ink-900 bg-ink-900 text-white"
-          : "border-ink-200 bg-white text-ink-600 hover:border-ink-400 hover:text-ink-900"
-      )}
-    >
-      {children}
-    </Link>
   );
 }

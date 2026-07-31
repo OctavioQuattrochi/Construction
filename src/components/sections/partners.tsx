@@ -1,7 +1,9 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { listProviderMeta } from "@/lib/providers/registry";
 
-// Tira de proveedores/partners integrados. Hoy usa los proveedores del
-// comparador; a futuro se puede alimentar con logos reales (imágenes).
+// Comercios cuyos precios reúne el comparador. NO son anunciantes ni partners:
+// BildAp muestra su información pública para facilitar la comparación.
 export function Partners() {
   const providers = listProviderMeta();
 
@@ -9,7 +11,11 @@ export function Partners() {
     <section className="border-y border-ink-100 bg-white py-10">
       <div className="container-x">
         <p className="text-center text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">
-          Proveedores y marcas integradas
+          Comparamos precios de {providers.length}+ comercios de Córdoba
+        </p>
+        <p className="mx-auto mt-2 max-w-xl text-center text-sm text-ink-400">
+          Reunimos los precios publicados de estos corralones y ferreterías para
+          que compares fácil en un solo lugar.
         </p>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3 md:gap-4">
           {providers.map((p) => (
@@ -28,9 +34,14 @@ export function Partners() {
               </span>
             </div>
           ))}
-          <div className="flex items-center rounded-2xl border border-dashed border-ink-200 px-5 py-3 text-sm font-medium text-ink-400">
-            + tu marca acá
-          </div>
+        </div>
+        <div className="mt-6 text-center">
+          <Link
+            href="/comparador"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:underline"
+          >
+            Comparar precios ahora <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
     </section>
