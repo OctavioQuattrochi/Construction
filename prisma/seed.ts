@@ -129,7 +129,7 @@ Copiar la fundación del vecino. Cada terreno es distinto, incluso en la misma c
       "Comparamos costo, aislación, velocidad de ejecución y resistencia entre los dos sistemas más usados.",
     categorySlug: "materiales",
     coverImage:
-      "https://images.unsplash.com/photo-1590986701408-9d6f2b9b1f3b?auto=format&fit=crop&w=1400&q=80",
+      "https://images.unsplash.com/photo-1516216628859-9bccecab13ca?auto=format&fit=crop&w=1400&q=80",
     tags: "ladrillo,bloque,mamposteria,materiales",
     featured: false,
     readMinutes: 5,

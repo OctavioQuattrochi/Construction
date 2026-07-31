@@ -20,18 +20,24 @@ export function isGoogleConfigured(): boolean {
   );
 }
 
-export function googleRedirectUri(): string {
-  const base = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(
-    /\/$/,
-    ""
-  );
-  return `${base}/api/auth/google/callback`;
+/** Origen público real (dominio) desde el request — evita mismatch de redirect_uri. */
+export function requestOrigin(req: Request): string {
+  const h = req.headers;
+  const host = h.get("x-forwarded-host") || h.get("host") || "";
+  const proto =
+    h.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+  if (host) return `${proto}://${host}`;
+  return (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 }
 
-export function googleAuthUrl(state: string): string {
+export function googleRedirectUri(origin: string): string {
+  return `${origin.replace(/\/$/, "")}/api/auth/google/callback`;
+}
+
+export function googleAuthUrl(state: string, redirectUri: string): string {
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID || "",
-    redirect_uri: googleRedirectUri(),
+    redirect_uri: redirectUri,
     response_type: "code",
     scope: "openid email profile",
     access_type: "offline",
@@ -41,7 +47,10 @@ export function googleAuthUrl(state: string): string {
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }
 
-export async function exchangeGoogleCode(code: string): Promise<{
+export async function exchangeGoogleCode(
+  code: string,
+  redirectUri: string
+): Promise<{
   email: string;
   name: string;
   picture?: string;
@@ -54,7 +63,7 @@ export async function exchangeGoogleCode(code: string): Promise<{
         code,
         client_id: process.env.GOOGLE_CLIENT_ID || "",
         client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
-        redirect_uri: googleRedirectUri(),
+        redirect_uri: redirectUri,
         grant_type: "authorization_code",
       }),
       cache: "no-store",

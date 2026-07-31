@@ -1,13 +1,18 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { createMemberSession, exchangeGoogleCode } from "@/lib/member-auth";
+import {
+  createMemberSession,
+  exchangeGoogleCode,
+  googleRedirectUri,
+  requestOrigin,
+} from "@/lib/member-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const base = requestOrigin(req);
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
@@ -20,7 +25,7 @@ export async function GET(req: Request) {
     return NextResponse.redirect(new URL("/ingresar?error=estado_invalido", base));
   }
 
-  const profile = await exchangeGoogleCode(code);
+  const profile = await exchangeGoogleCode(code, googleRedirectUri(base));
   if (!profile) {
     return NextResponse.redirect(new URL("/ingresar?error=google_error", base));
   }

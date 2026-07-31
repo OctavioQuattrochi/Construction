@@ -12,6 +12,8 @@ import {
   CircleSlash,
   HelpCircle,
   ArrowDownWideNarrow,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -139,10 +141,11 @@ export function ComparatorClient() {
     }
   }, []);
 
-  const groups = useMemo(
-    () => (data ? groupClient(data.products) : []),
-    [data]
-  );
+  // ---- Filtros ----
+  const [sortBy, setSortBy] = useState<"price-asc" | "price-desc">("price-asc");
+  const [onlyLive, setOnlyLive] = useState(false);
+  const [onlyStock, setOnlyStock] = useState(false);
+  const [providerId, setProviderId] = useState("all");
 
   const liveIds = useMemo(
     () =>
@@ -152,6 +155,42 @@ export function ComparatorClient() {
     [data]
   );
   const liveCount = liveIds.size;
+
+  const availableProviders = useMemo(() => {
+    if (!data) return [] as { id: string; name: string }[];
+    const seen = new Map<string, string>();
+    for (const p of data.products)
+      if (!seen.has(p.provider.id)) seen.set(p.provider.id, p.provider.name);
+    return Array.from(seen, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+  }, [data]);
+
+  const groups = useMemo(() => {
+    if (!data) return [];
+    let products = data.products;
+    if (onlyLive) products = products.filter((p) => liveIds.has(p.provider.id));
+    if (onlyStock)
+      products = products.filter((p) => p.availability === "in_stock");
+    if (providerId !== "all")
+      products = products.filter((p) => p.provider.id === providerId);
+    const g = groupClient(products);
+    return sortBy === "price-desc"
+      ? [...g].sort((a, b) => (b.min ?? -Infinity) - (a.min ?? -Infinity))
+      : g;
+  }, [data, onlyLive, onlyStock, providerId, sortBy, liveIds]);
+
+  const filteredOffers = useMemo(
+    () => groups.reduce((n, g) => n + g.offers.length, 0),
+    [groups]
+  );
+  const hasFilters = onlyLive || onlyStock || providerId !== "all";
+  function clearFilters() {
+    setOnlyLive(false);
+    setOnlyStock(false);
+    setProviderId("all");
+    setSortBy("price-asc");
+  }
 
   const retrievedLabel = data
     ? new Date(data.retrievedAt).toLocaleString("es-AR", {
@@ -223,22 +262,95 @@ export function ComparatorClient() {
         >
           <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-ink-600">
             <span className="font-medium text-ink-900">
-              {groups.length} producto(s) · {data.totalProducts} ofertas
-            </span>
-            <span className="flex items-center gap-1.5">
-              <ArrowDownWideNarrow className="h-4 w-4 text-amber-500" />
-              Ordenado por precio
+              {groups.length} producto(s) · {filteredOffers} ofertas
             </span>
             <span className="flex items-center gap-1.5">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              {liveCount}/{data.providersQueried} en vivo
+              {liveCount}/{data.providersQueried} proveedores en vivo
             </span>
           </div>
           <span className="text-ink-400">Datos obtenidos: {retrievedLabel}</span>
         </motion.div>
+      )}
+
+      {/* Filter bar */}
+      {data && !loading && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-1.5 text-sm font-medium text-ink-500">
+            <SlidersHorizontal className="h-4 w-4" /> Filtros:
+          </span>
+
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "price-asc" | "price-desc")}
+              className="cursor-pointer appearance-none rounded-full border border-ink-200 bg-white py-1.5 pl-4 pr-9 text-sm font-medium text-ink-700 focus:border-amber-500 focus:outline-none"
+            >
+              <option value="price-asc">Menor precio</option>
+              <option value="price-desc">Mayor precio</option>
+            </select>
+            <ArrowDownWideNarrow className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+          </div>
+
+          <select
+            value={providerId}
+            onChange={(e) => setProviderId(e.target.value)}
+            className="cursor-pointer rounded-full border border-ink-200 bg-white py-1.5 pl-4 pr-8 text-sm font-medium text-ink-700 focus:border-amber-500 focus:outline-none"
+          >
+            <option value="all">Todos los proveedores</option>
+            {availableProviders.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => setOnlyLive((v) => !v)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+              onlyLive
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                : "border-ink-200 text-ink-600 hover:border-ink-300"
+            )}
+          >
+            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Solo en vivo
+          </button>
+
+          <button
+            onClick={() => setOnlyStock((v) => !v)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+              onlyStock
+                ? "border-amber-500 bg-amber-500/10 text-amber-700"
+                : "border-ink-200 text-ink-600 hover:border-ink-300"
+            )}
+          >
+            <BadgeCheck className="h-3.5 w-3.5" /> Con stock
+          </button>
+
+          {hasFilters && (
+            <button
+              onClick={clearFilters}
+              className="ml-auto inline-flex items-center gap-1 text-sm text-ink-500 hover:text-ink-900"
+            >
+              <X className="h-4 w-4" /> Limpiar
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Sin resultados tras filtrar */}
+      {data && !loading && !error && groups.length === 0 && data.totalProducts > 0 && (
+        <div className="mt-8 rounded-3xl border border-dashed border-ink-200 bg-white p-10 text-center">
+          <p className="text-ink-500">Ningún resultado con esos filtros.</p>
+          <button onClick={clearFilters} className="mt-2 text-sm font-medium text-amber-600 hover:underline">
+            Limpiar filtros
+          </button>
+        </div>
       )}
 
       {/* States */}
@@ -250,7 +362,7 @@ export function ComparatorClient() {
         </div>
       )}
 
-      {!loading && !error && data && groups.length === 0 && (
+      {!loading && !error && data && data.totalProducts === 0 && (
         <EmptyState query={searched} />
       )}
 
@@ -266,6 +378,41 @@ export function ComparatorClient() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+// Imagen con fallback: si no hay src o falla la carga, muestra un placeholder.
+function SafeImg({
+  src,
+  alt,
+  className,
+}: {
+  src: string | null;
+  alt: string;
+  className?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center bg-ink-100 text-ink-300",
+          className
+        )}
+      >
+        <PackageSearch className="h-6 w-6" />
+      </div>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={cn("object-cover", className)}
+    />
   );
 }
 
@@ -287,15 +434,11 @@ function ProductGroup({
       className="overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-soft"
     >
       <div className="flex flex-col gap-4 border-b border-ink-100 bg-concrete-50/60 p-5 sm:flex-row sm:items-center">
-        {group.image && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={group.image}
-            alt={group.title}
-            className="h-16 w-16 shrink-0 rounded-2xl object-cover"
-            loading="lazy"
-          />
-        )}
+        <SafeImg
+          src={group.image}
+          alt={group.title}
+          className="h-16 w-16 shrink-0 rounded-2xl"
+        />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {group.brand && <Badge>{group.brand}</Badge>}

@@ -72,7 +72,7 @@ export const CATALOG: CatalogItem[] = [
     packageSize: "12x18x33 cm",
     basePrice: 720,
     keywords: ["ladrillo", "hueco", "ceramico", "12x18x33"],
-    image: img("photo-1590986701408-9d6f2b9b1f3b"),
+    image: img("photo-1516216628859-9bccecab13ca"),
   },
   {
     sku: "ladrillo-comun-macizo",
@@ -83,7 +83,7 @@ export const CATALOG: CatalogItem[] = [
     packageSize: "5x11x24 cm",
     basePrice: 165,
     keywords: ["ladrillo", "comun", "macizo"],
-    image: img("photo-1590986701408-9d6f2b9b1f3b"),
+    image: img("photo-1516216628859-9bccecab13ca"),
   },
   {
     sku: "bloque-hormigon-19x19x39",
