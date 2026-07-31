@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MapPin, BedDouble, Bath, Ruler } from "lucide-react";
 import type { Property } from "@prisma/client";
 import { formatCurrency } from "@/lib/utils";
+import { SaveButton } from "@/components/member/save-button";
 
 const operationLabel: Record<string, string> = {
   venta: "Venta",
@@ -22,7 +23,15 @@ export function priceLabel(p: Pick<Property, "price" | "currency" | "operation">
   return p.operation === "alquiler" ? `${value}/mes` : value;
 }
 
-export function PropertyCard({ property }: { property: Property }) {
+export function PropertyCard({
+  property,
+  isMember = false,
+  saved = false,
+}: {
+  property: Property;
+  isMember?: boolean;
+  saved?: boolean;
+}) {
   const img = property.coverImage || property.images.split("|")[0] || null;
 
   return (
@@ -47,6 +56,20 @@ export function PropertyCard({ property }: { property: Property }) {
           <span className="rounded-full bg-ink-950/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
             {typeLabel[property.type] ?? property.type}
           </span>
+        </div>
+        <div className="absolute right-3 top-3">
+          <SaveButton
+            isMember={isMember}
+            initialSaved={saved}
+            item={{
+              type: "property",
+              refId: property.slug,
+              title: property.title,
+              subtitle: property.location,
+              href: `/inmuebles/${property.slug}`,
+              image: img || undefined,
+            }}
+          />
         </div>
       </div>
 

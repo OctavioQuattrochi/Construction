@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { PropertyCard } from "@/components/properties/property-card";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
-import { getProperties } from "@/lib/queries";
+import { getProperties, getSavedRefIds } from "@/lib/queries";
+import { getMemberSession } from "@/lib/member-auth";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -35,10 +36,13 @@ export default async function InmueblesPage({
   searchParams: Promise<{ op?: string; type?: string }>;
 }) {
   const { op, type } = await searchParams;
-  const properties = await getProperties({
-    operation: op || undefined,
-    type: type || undefined,
-  });
+  const [properties, member] = await Promise.all([
+    getProperties({ operation: op || undefined, type: type || undefined }),
+    getMemberSession(),
+  ]);
+  const saved = member
+    ? await getSavedRefIds(member.id, "property")
+    : new Set<string>();
 
   return (
     <>
@@ -92,7 +96,11 @@ export default async function InmueblesPage({
           <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {properties.map((p) => (
               <StaggerItem key={p.id}>
-                <PropertyCard property={p} />
+                <PropertyCard
+                  property={p}
+                  isMember={Boolean(member)}
+                  saved={saved.has(p.slug)}
+                />
               </StaggerItem>
             ))}
           </StaggerGroup>

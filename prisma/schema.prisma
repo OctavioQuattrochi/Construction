@@ -99,13 +99,31 @@ model Subscriber {
 
 // Public members (registered via Google, etc.). Separate from admin `User`.
 model Member {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  name       String
+  image      String?
+  provider   String      @default("google")
+  savedItems SavedItem[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+// Favoritos guardados por un miembro (inmuebles, profesionales, etc.).
+model SavedItem {
   id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
+  memberId  String
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type      String // "property" | "professional" | "material" | "article"
+  refId     String // slug o clave única para deduplicar
+  title     String
+  subtitle  String?
+  href      String?
   image     String?
-  provider  String   @default("google")
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@unique([memberId, type, refId])
+  @@index([memberId])
 }
 
 // Bolsa de trabajo — profesionales asociados.

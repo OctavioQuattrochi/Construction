@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, MessageCircle, LogOut, User } from "lucide-react";
+import { Menu, X, MessageCircle, LogOut, User, Heart } from "lucide-react";
 import { nav, site } from "@/lib/site";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
@@ -106,6 +106,13 @@ export function Navbar({ member = null }: { member?: Member }) {
                       <p className="truncate px-3 py-2 text-xs text-ink-400">
                         {member.email}
                       </p>
+                      <Link
+                        href="/mi-cuenta"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50"
+                      >
+                        <Heart className="h-4 w-4" /> Mi cuenta
+                      </Link>
                       <button
                         onClick={logout}
                         className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50"

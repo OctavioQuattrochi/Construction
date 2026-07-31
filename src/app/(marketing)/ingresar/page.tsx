@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const benefits = [
-  "Guardá tus cálculos y comparaciones favoritas",
-  "Recibí alertas de precios de materiales",
-  "Contactá profesionales e inmuebles más rápido",
+  "Guardá inmuebles y profesionales favoritos",
+  "Encontralos siempre a mano en Mi cuenta",
+  "Muy pronto: alertas de precios y cálculos guardados",
 ];
 
 export default async function IngresarPage({

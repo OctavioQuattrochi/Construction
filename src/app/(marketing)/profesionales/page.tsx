@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { ProfessionalCard } from "@/components/professionals/professional-card";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
-import { getProfessionals, getProfessions } from "@/lib/queries";
+import { getProfessionals, getProfessions, getSavedRefIds } from "@/lib/queries";
+import { getMemberSession } from "@/lib/member-auth";
 import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -23,10 +24,14 @@ export default async function ProfesionalesPage({
   searchParams: Promise<{ p?: string }>;
 }) {
   const { p } = await searchParams;
-  const [professionals, professions] = await Promise.all([
+  const [professionals, professions, member] = await Promise.all([
     getProfessionals({ profession: p || undefined }),
     getProfessions(),
+    getMemberSession(),
   ]);
+  const saved = member
+    ? await getSavedRefIds(member.id, "professional")
+    : new Set<string>();
 
   return (
     <>
@@ -70,7 +75,11 @@ export default async function ProfesionalesPage({
           <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {professionals.map((pro) => (
               <StaggerItem key={pro.id}>
-                <ProfessionalCard pro={pro} />
+                <ProfessionalCard
+                  pro={pro}
+                  isMember={Boolean(member)}
+                  saved={saved.has(pro.slug)}
+                />
               </StaggerItem>
             ))}
           </StaggerGroup>

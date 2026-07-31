@@ -2,8 +2,17 @@ import { MapPin, Mail, MessageCircle, Phone, BadgeCheck } from "lucide-react";
 import type { Professional } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { toList } from "@/lib/utils";
+import { SaveButton } from "@/components/member/save-button";
 
-export function ProfessionalCard({ pro }: { pro: Professional }) {
+export function ProfessionalCard({
+  pro,
+  isMember = false,
+  saved = false,
+}: {
+  pro: Professional;
+  isMember?: boolean;
+  saved?: boolean;
+}) {
   const specialties = toList(pro.specialties, "|");
   const initials = pro.name
     .split(" ")
@@ -43,6 +52,19 @@ export function ProfessionalCard({ pro }: { pro: Professional }) {
             <MapPin className="h-3 w-3" /> {pro.location}
           </p>
         </div>
+        <SaveButton
+          isMember={isMember}
+          initialSaved={saved}
+          className="shrink-0"
+          item={{
+            type: "professional",
+            refId: pro.slug,
+            title: pro.name,
+            subtitle: pro.profession,
+            href: "/profesionales",
+            image: pro.photo || undefined,
+          }}
+        />
       </div>
 
       <p className="mt-4 line-clamp-3 flex-1 text-sm leading-relaxed text-ink-500">

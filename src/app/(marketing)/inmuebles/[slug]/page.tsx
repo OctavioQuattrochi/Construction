@@ -11,8 +11,10 @@ import {
   Phone,
   Building2,
 } from "lucide-react";
-import { getPropertyBySlug } from "@/lib/queries";
+import { getPropertyBySlug, getSavedRefIds } from "@/lib/queries";
+import { getMemberSession } from "@/lib/member-auth";
 import { priceLabel } from "@/components/properties/property-card";
+import { SaveButton } from "@/components/member/save-button";
 import { toList } from "@/lib/utils";
 
 interface Props {
@@ -45,6 +47,11 @@ export default async function PropertyPage({ params }: Props) {
   const { slug } = await params;
   const property = await getPropertyBySlug(slug);
   if (!property || !property.published) notFound();
+
+  const member = await getMemberSession();
+  const savedSet = member
+    ? await getSavedRefIds(member.id, "property")
+    : new Set<string>();
 
   const gallery = [
     property.coverImage,
@@ -98,13 +105,27 @@ export default async function PropertyPage({ params }: Props) {
           {/* Sidebar */}
           <aside className="lg:sticky lg:top-24 lg:h-fit">
             <div className="rounded-3xl border border-ink-100 bg-white p-6 shadow-soft">
-              <div className="flex items-center gap-2">
-                <span className="rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-ink-950">
-                  {property.operation === "alquiler" ? "Alquiler" : "Venta"}
-                </span>
-                <span className="rounded-full bg-ink-100 px-3 py-1 text-xs font-medium text-ink-600">
-                  {typeLabel[property.type] ?? property.type}
-                </span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-ink-950">
+                    {property.operation === "alquiler" ? "Alquiler" : "Venta"}
+                  </span>
+                  <span className="rounded-full bg-ink-100 px-3 py-1 text-xs font-medium text-ink-600">
+                    {typeLabel[property.type] ?? property.type}
+                  </span>
+                </div>
+                <SaveButton
+                  isMember={Boolean(member)}
+                  initialSaved={savedSet.has(property.slug)}
+                  item={{
+                    type: "property",
+                    refId: property.slug,
+                    title: property.title,
+                    subtitle: property.location,
+                    href: `/inmuebles/${property.slug}`,
+                    image: property.coverImage || undefined,
+                  }}
+                />
               </div>
               <p className="mt-4 font-display text-3xl font-bold text-ink-900">
                 {priceLabel(property)}

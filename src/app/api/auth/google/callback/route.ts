@@ -47,7 +47,7 @@ export async function GET(req: Request) {
       name: member.name,
       image: member.image ?? undefined,
     });
-    return NextResponse.redirect(new URL("/?bienvenido=1", base));
+    return NextResponse.redirect(new URL("/mi-cuenta", base));
   } catch {
     return NextResponse.redirect(new URL("/ingresar?error=db_error", base));
   }

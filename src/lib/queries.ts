@@ -138,6 +138,33 @@ export async function getPropertyBySlug(slug: string) {
   }
 }
 
+// ------------------------------------------------------------- FAVORITES
+export async function getSavedRefIds(
+  memberId: string,
+  type: string
+): Promise<Set<string>> {
+  try {
+    const items = await db.savedItem.findMany({
+      where: { memberId, type },
+      select: { refId: true },
+    });
+    return new Set(items.map((i) => i.refId));
+  } catch {
+    return new Set();
+  }
+}
+
+export async function getSavedItems(memberId: string) {
+  try {
+    return await db.savedItem.findMany({
+      where: { memberId },
+      orderBy: { createdAt: "desc" },
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function getRelatedArticles(articleId: string, categoryId: string | null) {
   try {
     return await db.article.findMany({
