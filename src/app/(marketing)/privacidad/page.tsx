@@ -14,15 +14,31 @@ export default function PrivacidadPage() {
       <section className="container-x py-16">
         <div className="prose-article mx-auto max-w-3xl">
           <p className="md-p">
-            Respetamos tu privacidad. Los datos que ingresás en el formulario de
-            contacto (nombre, email, teléfono y mensaje) se utilizan
-            exclusivamente para responder tu consulta y coordinar el servicio.
+            Respetamos tu privacidad. Tratamos tus datos personales de acuerdo con
+            la <strong>Ley 25.326 de Protección de Datos Personales</strong> de la
+            República Argentina. Los datos que ingresás se utilizan exclusivamente
+            para los fines descriptos abajo.
           </p>
           <h2 className="md-h2">Qué datos guardamos</h2>
           <ul className="md-list">
-            <li>Datos de contacto que ingresás voluntariamente.</li>
-            <li>El contenido de tu consulta.</li>
-            <li>Fecha y hora del envío.</li>
+            <li>
+              <strong>Contacto:</strong> nombre, email, teléfono y el contenido de
+              tu consulta, para responderte y coordinar el servicio.
+            </li>
+            <li>
+              <strong>Newsletter:</strong> tu email, si te suscribís, para enviarte
+              novedades. Podés darte de baja cuando quieras.
+            </li>
+            <li>
+              <strong>Cuenta con Google:</strong> si iniciás sesión, guardamos tu
+              nombre, email y foto de perfil para identificarte y mostrarte tus
+              favoritos y presupuestos guardados.
+            </li>
+            <li>
+              <strong>Uso del sitio:</strong> métricas anónimas de navegación
+              (Google Analytics) para mejorar la plataforma. No te identifican
+              personalmente.
+            </li>
           </ul>
           <h2 className="md-h2">Qué NO hacemos</h2>
           <p className="md-p">
@@ -31,12 +47,14 @@ export default function PrivacidadPage() {
           </p>
           <h2 className="md-h2">Tus derechos</h2>
           <p className="md-p">
-            Podés solicitar la baja o eliminación de tus datos en cualquier
-            momento escribiendo a{" "}
+            Conforme a la Ley 25.326, podés acceder, rectificar, actualizar o
+            solicitar la eliminación de tus datos en cualquier momento escribiendo
+            a{" "}
             <a className="md-link" href={`mailto:${site.email}`}>
               {site.email}
             </a>
-            .
+            . La <strong>Agencia de Acceso a la Información Pública</strong>, órgano
+            de control de la Ley 25.326, atiende las denuncias por incumplimiento.
           </p>
         </div>
       </section>

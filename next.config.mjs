@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -19,4 +21,9 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry envuelve la config. Sin SENTRY_AUTH_TOKEN no sube source maps (ok).
+// Sin DSN, el SDK es no-op en runtime.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  telemetry: false,
+});

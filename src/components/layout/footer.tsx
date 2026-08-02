@@ -82,13 +82,27 @@ export function Footer() {
           </span>
         </div>
 
-        <div className="mt-6 flex flex-col items-start justify-between gap-4 border-t border-white/10 pt-8 text-xs text-concrete-500 sm:flex-row sm:items-center">
-          <p>
-            © {year} {site.brand}. Todos los derechos reservados.
+        <div className="mt-6 border-t border-white/10 pt-8">
+          <p className="text-xs leading-relaxed text-concrete-500">
+            {site.brand} es una plataforma que reúne información de terceros
+            (precios de comercios, inmuebles y profesionales) con fines
+            orientativos. No respondemos por los avisos, precios ni servicios de
+            terceros; verificá siempre directamente con el proveedor. Ver{" "}
+            <a href="/terminos" className="underline hover:text-concrete-300">
+              términos
+            </a>{" "}
+            y{" "}
+            <a href="/privacidad" className="underline hover:text-concrete-300">
+              privacidad
+            </a>
+            .
           </p>
-          <p className="flex items-center gap-2">
-            Hecho con criterio técnico en {site.region}, {site.country}.
-          </p>
+          <div className="mt-4 flex flex-col items-start justify-between gap-4 text-xs text-concrete-500 sm:flex-row sm:items-center">
+            <p>© {year} {site.brand}. Todos los derechos reservados.</p>
+            <p className="flex items-center gap-2">
+              Hecho con criterio técnico en {site.region}, {site.country}.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
