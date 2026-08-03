@@ -1,4 +1,5 @@
 import { compare } from "./providers/engine";
+import { db } from "./db";
 import type { NormalizedProduct } from "./providers/types";
 
 // Índice de precios REALES: para cada material canónico busca el precio más barato
@@ -95,12 +96,11 @@ function pickCheapest(
   return scored.reduce((a, b) => (b.price < a.price ? b : a));
 }
 
-/** Devuelve el precio real (más barato en vivo) para cada material pedido. */
-export async function getMaterialPrices(
+/** Scrapea EN VIVO el precio más barato de cada material (sin tocar la DB). */
+async function liveMaterialPrices(
   keys: string[]
 ): Promise<Record<string, MaterialPrice | null>> {
   const unique = Array.from(new Set(keys)).filter((k) => SPECS[k]);
-  // Buscar en paralelo las queries necesarias (deduplicadas por query).
   const queries = Array.from(new Set(unique.map((k) => SPECS[k].query)));
   await Promise.all(queries.map((q) => liveProductsFor(q)));
 
@@ -131,4 +131,150 @@ export async function getMaterialPrices(
 
 export function priceableKeys(): string[] {
   return Object.keys(SPECS);
+}
+
+// --------------------------------------------------------- CRON + DB
+const MAX_AGE_MS = 24 * 60 * 60 * 1000; // un snapshot más viejo que esto se re-scrapea
+
+/** Corre el cron: scrapea todos los materiales y guarda un snapshot por cada uno. */
+export async function refreshPrices() {
+  const keys = priceableKeys();
+  const live = await liveMaterialPrices(keys);
+  const stored: string[] = [];
+  for (const key of keys) {
+    const p = live[key];
+    if (!p) continue;
+    try {
+      await db.priceSnapshot.create({
+        data: {
+          material: key,
+          providerId: p.storeId,
+          providerName: p.storeName,
+          title: p.title,
+          price: p.price,
+          unit: p.unit,
+          url: p.url,
+        },
+      });
+      stored.push(key);
+    } catch {
+      /* seguir con el resto */
+    }
+  }
+  return {
+    at: new Date().toISOString(),
+    materials: keys.length,
+    stored: stored.length,
+    keys: stored,
+  };
+}
+
+/**
+ * Precio de cada material para el presupuesto: lee el último snapshot de la DB
+ * (rápido y resistente a caídas). Si no hay snapshot fresco, cae a scraping en vivo.
+ */
+export async function getMaterialPrices(
+  keys: string[]
+): Promise<Record<string, MaterialPrice | null>> {
+  const out: Record<string, MaterialPrice | null> = {};
+  const missing: string[] = [];
+
+  // Leer el último snapshot de cada material en paralelo.
+  const snaps = await Promise.all(
+    keys.map((key) =>
+      db.priceSnapshot
+        .findFirst({ where: { material: key }, orderBy: { capturedAt: "desc" } })
+        .catch(() => null)
+    )
+  );
+
+  keys.forEach((key, i) => {
+    const snap = snaps[i];
+    if (snap && Date.now() - snap.capturedAt.getTime() < MAX_AGE_MS) {
+      out[key] = {
+        key,
+        price: snap.price,
+        unit: snap.unit,
+        storeId: snap.providerId,
+        storeName: snap.providerName,
+        url: snap.url,
+        title: snap.title,
+        capturedAt: snap.capturedAt.toISOString(),
+      };
+    } else {
+      missing.push(key);
+    }
+  });
+
+  if (missing.length > 0) {
+    const live = await liveMaterialPrices(missing);
+    for (const k of missing) out[k] = live[k] ?? null;
+  }
+  return out;
+}
+
+/** Última cotización guardada de cada material (para el índice de precios). */
+export async function getLatestPrices() {
+  const keys = priceableKeys();
+  const rows = await Promise.all(
+    keys.map((k) =>
+      db.priceSnapshot.findFirst({
+        where: { material: k },
+        orderBy: { capturedAt: "desc" },
+      })
+    )
+  );
+  return rows.filter((r): r is NonNullable<typeof r> => r != null);
+}
+
+export interface PriceIndexRow {
+  material: string;
+  price: number;
+  unit: string;
+  storeName: string;
+  capturedAt: string;
+  changePct: number | null; // variación vs el snapshot anterior
+}
+
+/** Índice de precios: último valor de cada material + su variación. */
+export async function getPriceIndex(): Promise<PriceIndexRow[]> {
+  const keys = priceableKeys();
+  const rows = await Promise.all(
+    keys.map(async (material) => {
+      const snaps = await db.priceSnapshot
+        .findMany({
+          where: { material },
+          orderBy: { capturedAt: "desc" },
+          take: 2,
+        })
+        .catch(() => []);
+      if (snaps.length === 0) return null;
+      const [latest, prev] = snaps;
+      return {
+        material,
+        price: latest.price,
+        unit: latest.unit,
+        storeName: latest.providerName,
+        capturedAt: latest.capturedAt.toISOString(),
+        changePct:
+          prev && prev.price > 0
+            ? ((latest.price - prev.price) / prev.price) * 100
+            : null,
+      } satisfies PriceIndexRow;
+    })
+  );
+  return rows.filter((r): r is PriceIndexRow => r != null);
+}
+
+/** Historial de un material (para tendencia). */
+export async function getPriceHistory(material: string, take = 30) {
+  try {
+    return await db.priceSnapshot.findMany({
+      where: { material },
+      orderBy: { capturedAt: "desc" },
+      take,
+    });
+  } catch {
+    return [];
+  }
 }

@@ -191,6 +191,23 @@ model Property {
   @@index([published, operation, type])
 }
 
+// Snapshot de precios: el cron guarda el precio más barato en vivo por material
+// cada X horas. Alimenta el presupuesto (lectura rápida) y el histórico/tendencia.
+model PriceSnapshot {
+  id           String   @id @default(cuid())
+  material     String // clave canónica: "cemento", "hierro", etc.
+  providerId   String
+  providerName String
+  title        String
+  price        Float
+  unit         String
+  url          String
+  capturedAt   DateTime @default(now())
+
+  @@index([material, capturedAt])
+  @@index([capturedAt])
+}
+
 // Noticias de la construcción curadas por el admin (links a medios externos).
 model News {
   id        String   @id @default(cuid())

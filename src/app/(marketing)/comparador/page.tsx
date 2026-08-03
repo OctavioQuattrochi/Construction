@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { ComparatorClient } from "@/components/comparator/comparator-client";
+import { PriceIndexSection } from "@/components/comparator/price-index-section";
 import { listProviderMeta } from "@/lib/providers/registry";
 import { Dot } from "@/components/ui/badge";
 
@@ -58,6 +59,8 @@ export default function ComparadorPage() {
           </p>
         </div>
       </section>
+
+      <PriceIndexSection />
     </>
   );
 }
