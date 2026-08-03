@@ -218,3 +218,33 @@ export async function deleteMessage(fd: FormData) {
   if (id) await db.contactMessage.delete({ where: { id } });
   revalidatePath("/admin/mensajes");
 }
+
+// ------------------------------------------------------------- NEWS
+export async function saveNews(fd: FormData) {
+  await guard();
+  const id = str(fd, "id");
+  const data = {
+    title: str(fd, "title"),
+    summary: str(fd, "summary") || null,
+    source: str(fd, "source"),
+    url: str(fd, "url"),
+    image: str(fd, "image") || null,
+    order: Number(str(fd, "order")) || 0,
+    published: bool(fd, "published"),
+  };
+  if (id) {
+    await db.news.update({ where: { id }, data });
+  } else {
+    await db.news.create({ data });
+  }
+  revalidatePath("/admin/noticias");
+  revalidatePath("/");
+  redirect("/admin/noticias");
+}
+export async function deleteNews(fd: FormData) {
+  await guard();
+  const id = str(fd, "id");
+  if (id) await db.news.delete({ where: { id } });
+  revalidatePath("/admin/noticias");
+  revalidatePath("/");
+}

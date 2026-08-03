@@ -12,6 +12,7 @@ import {
   Users,
   Building2,
   Mail,
+  Newspaper,
   LogOut,
   ExternalLink,
   Menu,
@@ -27,6 +28,7 @@ const links = [
   { href: "/admin/servicios", label: "Servicios", icon: Wrench },
   { href: "/admin/profesionales", label: "Profesionales", icon: Users },
   { href: "/admin/inmuebles", label: "Inmuebles", icon: Building2 },
+  { href: "/admin/noticias", label: "Noticias", icon: Newspaper },
   { href: "/admin/mensajes", label: "Mensajes", icon: Inbox },
   { href: "/admin/suscriptores", label: "Suscriptores", icon: Mail },
 ];

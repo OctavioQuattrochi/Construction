@@ -16,6 +16,7 @@ import {
   X,
   Store,
   ChevronDown,
+  ShoppingCart,
 } from "lucide-react";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,8 @@ import type {
   Availability,
 } from "@/lib/providers/types";
 import { productMatch } from "@/lib/providers/match";
+import { useBasket } from "./use-basket";
+import { ComparatorBasket } from "./comparator-basket";
 
 const SUGGESTIONS = [
   "cemento",
@@ -150,6 +153,22 @@ export function ComparatorClient() {
       if (reqId === requestRef.current) setLoading(false);
     }
   }, []);
+
+  const basket = useBasket();
+  const addToBasket = useCallback(
+    (g: Grouped) => {
+      const o = g.offers.find((x) => x.price != null);
+      if (o)
+        basket.add({
+          title: o.title,
+          store: o.provider.name,
+          storeId: o.provider.id,
+          unitPrice: o.price!,
+          url: o.url,
+        });
+    },
+    [basket]
+  );
 
   // ---- Filtros ----
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc">("price-asc");
@@ -448,10 +467,18 @@ export function ComparatorClient() {
         <AnimatePresence>
           {!loading &&
             groups.map((g, i) => (
-              <ProductGroup key={g.sku} group={g} index={i} liveIds={liveIds} />
+              <ProductGroup
+                key={g.sku}
+                group={g}
+                index={i}
+                liveIds={liveIds}
+                onAdd={addToBasket}
+              />
             ))}
         </AnimatePresence>
       </div>
+
+      <ComparatorBasket basket={basket} />
     </div>
   );
 }
@@ -495,12 +522,15 @@ function ProductGroup({
   group,
   index,
   liveIds,
+  onAdd,
 }: {
   group: Grouped;
   index: number;
   liveIds: Set<string>;
+  onAdd: (g: Grouped) => void;
 }) {
   const cheapestId = group.offers.find((o) => o.price != null)?.id;
+  const canAdd = group.offers.some((o) => o.price != null);
   return (
     <motion.article
       initial={{ opacity: 0, y: 20 }}
@@ -548,6 +578,14 @@ function ProductGroup({
                 </p>
               )}
             </>
+          )}
+          {canAdd && (
+            <button
+              onClick={() => onAdd(group)}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-xs font-medium text-ink-700 transition-colors hover:border-amber-500 hover:bg-amber-500/10 hover:text-amber-700"
+            >
+              <ShoppingCart className="h-3.5 w-3.5" /> Agregar a lista
+            </button>
           )}
         </div>
       </div>

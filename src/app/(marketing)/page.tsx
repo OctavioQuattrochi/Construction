@@ -6,6 +6,7 @@ import { FAQ } from "@/components/sections/faq";
 import { CTA } from "@/components/sections/cta";
 import { TrustBar } from "@/components/sections/trust-bar";
 import { Partners } from "@/components/sections/partners";
+import { News } from "@/components/sections/news";
 import { getServices } from "@/lib/queries";
 import { site } from "@/lib/site";
 
@@ -34,6 +35,7 @@ export default async function HomePage() {
       <About />
       <Tools />
       <Partners />
+      <News />
       <FAQ />
       <CTA />
     </>

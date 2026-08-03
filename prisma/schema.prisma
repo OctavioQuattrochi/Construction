@@ -190,3 +190,19 @@ model Property {
 
   @@index([published, operation, type])
 }
+
+// Noticias de la construcción curadas por el admin (links a medios externos).
+model News {
+  id        String   @id @default(cuid())
+  title     String
+  summary   String?
+  source    String // medio (ej "La Voz del Interior")
+  url       String
+  image     String?
+  published Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, order])
+}
