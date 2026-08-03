@@ -13,6 +13,7 @@ import {
 import { PageHeader } from "@/components/ui/page-header";
 import { SaveButton } from "@/components/member/save-button";
 import { DeleteCalcButton } from "@/components/member/delete-calc-button";
+import { ObraBudget } from "@/components/member/obra-budget";
 import { getMemberSession } from "@/lib/member-auth";
 import { getSavedItems, getSavedCalculations } from "@/lib/queries";
 import { estimateBudget } from "@/lib/budget";
@@ -96,6 +97,15 @@ export default async function MiCuentaPage() {
   const byType = (t: string) => items.filter((i) => i.type === t);
   const firstName = member.name.split(" ")[0];
 
+  // Presupuesto de obra: sumar los materiales de todos los cálculos guardados.
+  const materialTotals = new Map<string, number>();
+  for (const calc of calculations) {
+    const { budget } = parseCalcResult(calc.result);
+    for (const b of budget)
+      materialTotals.set(b.key, (materialTotals.get(b.key) ?? 0) + b.qty);
+  }
+  const obraItems = Array.from(materialTotals, ([key, qty]) => ({ key, qty }));
+
   return (
     <>
       <PageHeader
@@ -137,6 +147,24 @@ export default async function MiCuentaPage() {
           </div>
         ) : (
           <div className="space-y-12">
+            {/* Presupuesto de obra (con precios reales del comparador) */}
+            {obraItems.length > 0 && (
+              <div>
+                <div className="mb-5 flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-amber-500" />
+                  <h2 className="font-display text-xl font-bold text-ink-900">
+                    Presupuesto de tu obra
+                  </h2>
+                </div>
+                <p className="mb-4 max-w-2xl text-sm text-ink-500">
+                  Sumamos los materiales de todos tus cálculos guardados y les
+                  ponemos el <strong>precio real más barato</strong> del comparador,
+                  en pesos. Actualizá cuando quieras y descargalo en PDF.
+                </p>
+                <ObraBudget items={obraItems} />
+              </div>
+            )}
+
             {/* Favoritos */}
             {items.length > 0 && (
               <div>

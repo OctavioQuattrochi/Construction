@@ -53,6 +53,23 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+  /* Impresión / PDF: aislar el presupuesto de obra (oculta navbar, footer, etc.). */
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #obra-presupuesto,
+    #obra-presupuesto * {
+      visibility: visible;
+    }
+    #obra-presupuesto {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      border: none !important;
+      box-shadow: none !important;
+    }
+  }
   /* Barra fina y sutil, visible y arrastrable (indica que hay más opciones). */
   .thin-scrollbar {
     scrollbar-width: thin;

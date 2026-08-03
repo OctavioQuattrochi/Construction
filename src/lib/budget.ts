@@ -35,6 +35,10 @@ const PRICE_MAP: Record<string, PriceRef> = {
   zocalo: { price: 3200, unit: "u", label: "Zócalo (pieza)" },
 };
 
+export function materialLabel(key: string): string {
+  return PRICE_MAP[key]?.label ?? key.replace(/_/g, " ");
+}
+
 function resolvePrice(key: string): { label: string; unit: string; price: number } | null {
   const ref = PRICE_MAP[key];
   if (!ref) return null;

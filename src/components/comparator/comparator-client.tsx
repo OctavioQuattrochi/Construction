@@ -153,7 +153,9 @@ export function ComparatorClient() {
 
   // ---- Filtros ----
   const [sortBy, setSortBy] = useState<"price-asc" | "price-desc">("price-asc");
-  const [onlyLive, setOnlyLive] = useState(false);
+  // Por defecto sólo mostramos precios EN VIVO (ciertos). Los de referencia son
+  // estimaciones y pueden errar, así que quedan ocultos salvo que el usuario los pida.
+  const [showReference, setShowReference] = useState(false);
   const [onlyStock, setOnlyStock] = useState(false);
   const [providerId, setProviderId] = useState("all");
 
@@ -179,7 +181,9 @@ export function ComparatorClient() {
   const groups = useMemo(() => {
     if (!data) return [];
     let products = data.products;
-    if (onlyLive) products = products.filter((p) => liveIds.has(p.provider.id));
+    // Ocultar precios de referencia salvo que se pidan explícitamente.
+    if (!showReference)
+      products = products.filter((p) => liveIds.has(p.provider.id));
     if (onlyStock)
       products = products.filter((p) => p.availability === "in_stock");
     if (providerId !== "all")
@@ -188,15 +192,20 @@ export function ComparatorClient() {
     return sortBy === "price-desc"
       ? [...g].sort((a, b) => (b.min ?? -Infinity) - (a.min ?? -Infinity))
       : g;
-  }, [data, onlyLive, onlyStock, providerId, sortBy, liveIds]);
+  }, [data, showReference, onlyStock, providerId, sortBy, liveIds]);
 
   const filteredOffers = useMemo(
     () => groups.reduce((n, g) => n + g.offers.length, 0),
     [groups]
   );
-  const hasFilters = onlyLive || onlyStock || providerId !== "all";
+  // Cuántos productos hay sólo con precios de referencia (para avisar).
+  const referenceOnlyCount = useMemo(() => {
+    if (!data) return 0;
+    return data.products.filter((p) => !liveIds.has(p.provider.id)).length;
+  }, [data, liveIds]);
+  const hasFilters = showReference || onlyStock || providerId !== "all";
   function clearFilters() {
-    setOnlyLive(false);
+    setShowReference(false);
     setOnlyStock(false);
     setProviderId("all");
     setSortBy("price-asc");
@@ -351,17 +360,20 @@ export function ComparatorClient() {
             ))}
           </select>
 
-          <button
-            onClick={() => setOnlyLive((v) => !v)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
-              onlyLive
-                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                : "border-ink-200 text-ink-600 hover:border-ink-300"
-            )}
-          >
-            <span className="h-2 w-2 rounded-full bg-emerald-500" /> Solo en vivo
-          </button>
+          {referenceOnlyCount > 0 && (
+            <button
+              onClick={() => setShowReference((v) => !v)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                showReference
+                  ? "border-amber-500 bg-amber-500/10 text-amber-700"
+                  : "border-ink-200 text-ink-600 hover:border-ink-300"
+              )}
+            >
+              <span className="h-2 w-2 rounded-full bg-ink-300" />
+              {showReference ? "Ocultar" : "Ver"} precios de referencia
+            </button>
+          )}
 
           <button
             onClick={() => setOnlyStock((v) => !v)}
@@ -389,10 +401,30 @@ export function ComparatorClient() {
       {/* Sin resultados tras filtrar */}
       {data && !loading && !error && groups.length === 0 && data.totalProducts > 0 && (
         <div className="mt-8 rounded-3xl border border-dashed border-ink-200 bg-white p-10 text-center">
-          <p className="text-ink-500">Ningún resultado con esos filtros.</p>
-          <button onClick={clearFilters} className="mt-2 text-sm font-medium text-amber-600 hover:underline">
-            Limpiar filtros
-          </button>
+          {!showReference && referenceOnlyCount > 0 ? (
+            <>
+              <p className="font-medium text-ink-700">
+                No encontramos precios <span className="text-emerald-600">en vivo</span> para esta búsqueda.
+              </p>
+              <p className="mt-1 text-sm text-ink-500">
+                Tenemos {referenceOnlyCount} precio(s) de referencia (estimados). No los
+                mostramos por defecto porque pueden no ser exactos.
+              </p>
+              <button
+                onClick={() => setShowReference(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-medium text-white hover:bg-ink-800"
+              >
+                Ver precios de referencia igual
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-ink-500">Ningún resultado con esos filtros.</p>
+              <button onClick={clearFilters} className="mt-2 text-sm font-medium text-amber-600 hover:underline">
+                Limpiar filtros
+              </button>
+            </>
+          )}
         </div>
       )}
 
