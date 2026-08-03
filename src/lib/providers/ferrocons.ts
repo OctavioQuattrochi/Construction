@@ -16,7 +16,7 @@ export class FerroconsProvider extends BaseProvider {
       priceFactor: 0.965,
       availability: () => "in_stock",
       urlFor: (item) =>
-        `${this.meta.website}/busqueda?q=${encodeURIComponent(item.title)}`,
+        `${this.meta.website}/busqueda?q=${encodeURIComponent(item.keywords[0] ?? item.title)}`,
     });
   }
 }

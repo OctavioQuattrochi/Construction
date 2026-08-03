@@ -62,7 +62,7 @@ export class CasaManriqueProvider extends BaseProvider {
       availability: (item) =>
         item.category === "Áridos" ? "unknown" : "in_stock",
       urlFor: (item) =>
-        `${this.meta.website}/?s=${encodeURIComponent(item.title)}&post_type=product`,
+        `${this.meta.website}/?s=${encodeURIComponent(item.keywords[0] ?? item.title)}&post_type=product`,
     });
   }
 }

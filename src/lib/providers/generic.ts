@@ -28,7 +28,9 @@ export class CatalogProvider extends BaseProvider {
     return this.catalogFallback(options, {
       priceFactor: this.cfg.priceFactor,
       availability: () => this.cfg.availability ?? "unknown",
-      urlFor: (item) => this.cfg.searchUrl(item.title),
+      // Buscar por palabra clave (ej. "cemento"), no por el título completo:
+      // la búsqueda de la tienda encuentra resultados relevantes en vez de vacío.
+      urlFor: (item) => this.cfg.searchUrl(item.keywords[0] ?? item.title),
     });
   }
 }
@@ -105,7 +107,10 @@ export class VtexProvider extends CatalogProvider {
           brand: p.brand ?? null,
           price: offer?.Price ?? null,
           availability: offer?.IsAvailable ? "in_stock" : "out_of_stock",
-          url: `${this.meta.website}/${p.link}`.replace(/([^:]\/)\/+/g, "$1"),
+          // VTEX `link` ya es la URL completa; no duplicar el dominio.
+          url: p.link?.startsWith("http")
+            ? p.link
+            : `${this.meta.website}/${(p.link ?? "").replace(/^\//, "")}`,
           image: item?.images?.[0]?.imageUrl ?? null,
         });
       })

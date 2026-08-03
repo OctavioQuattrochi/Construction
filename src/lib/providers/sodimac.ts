@@ -79,7 +79,7 @@ export class SodimacProvider extends BaseProvider {
           : "in_stock",
       urlFor: (item) =>
         `${this.meta.website}/sodimac-ar/search?Ntt=${encodeURIComponent(
-          item.title
+          item.keywords[0] ?? item.title
         )}`,
     });
   }

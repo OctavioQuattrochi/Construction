@@ -44,7 +44,10 @@ export class EasyProvider extends BaseProvider {
         brand: p.brand ?? null,
         price: offer?.Price ?? null,
         availability: offer?.IsAvailable ? "in_stock" : "out_of_stock",
-        url: `${this.meta.website}/${p.link}`.replace(/([^:]\/)\/+/g, "$1"),
+        // VTEX `link` ya es la URL completa; no anteponer el dominio (evita duplicar).
+        url: p.link?.startsWith("http")
+          ? p.link
+          : `${this.meta.website}/${(p.link ?? "").replace(/^\//, "")}`,
         image: item?.images?.[0]?.imageUrl ?? null,
         category: null,
       });
@@ -58,7 +61,7 @@ export class EasyProvider extends BaseProvider {
       availability: (item) =>
         item.category === "Áridos" ? "out_of_stock" : "in_stock",
       urlFor: (item) =>
-        `${this.meta.website}/search?text=${encodeURIComponent(item.title)}`,
+        `${this.meta.website}/search?text=${encodeURIComponent(item.keywords[0] ?? item.title)}`,
     });
   }
 }

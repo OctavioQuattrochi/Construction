@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -448,7 +448,12 @@ export function ComparatorClient() {
       )}
 
       {/* States */}
-      {loading && <ResultsSkeleton />}
+      {loading && (
+        <>
+          <SearchingState query={searched} />
+          <ResultsSkeleton />
+        </>
+      )}
 
       {error && !loading && (
         <div className="mt-10 rounded-3xl border border-red-100 bg-red-50 p-8 text-center text-red-600">
@@ -700,9 +705,77 @@ function OfferRow({
   );
 }
 
+const SEARCH_MESSAGES = [
+  "Investigando precios en los corralones…",
+  "Consultando las tiendas online…",
+  "Comparando entre proveedores…",
+  "Buscando el más barato para vos…",
+];
+
+function SearchingState({ query }: { query: string }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(
+      () => setI((v) => (v + 1) % SEARCH_MESSAGES.length),
+      1400
+    );
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="mt-8 overflow-hidden rounded-3xl border border-ink-100 bg-white p-8 shadow-soft">
+      <div className="flex flex-col items-center text-center">
+        {/* Ícono con anillo animado */}
+        <div className="relative flex h-16 w-16 items-center justify-center">
+          <motion.span
+            className="absolute inset-0 rounded-full border-2 border-amber-500/30 border-t-amber-500"
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          />
+          <motion.div
+            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-900"
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ repeat: Infinity, duration: 1.4, ease: "easeInOut" }}
+          >
+            <Search className="h-5 w-5 text-amber-400" />
+          </motion.div>
+        </div>
+
+        {/* Mensaje rotativo */}
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={i}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.3 }}
+            className="mt-4 font-display text-lg font-semibold text-ink-900"
+          >
+            {SEARCH_MESSAGES[i]}
+          </motion.p>
+        </AnimatePresence>
+        {query && (
+          <p className="mt-1 text-sm text-ink-400">
+            Buscando “{query}” en las tiendas de Córdoba
+          </p>
+        )}
+
+        {/* Barrita indeterminada */}
+        <div className="relative mt-5 h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-ink-100">
+          <motion.div
+            className="absolute inset-y-0 w-1/3 rounded-full bg-gradient-to-r from-amber-400 to-amber-600"
+            animate={{ left: ["-35%", "100%"] }}
+            transition={{ repeat: Infinity, duration: 1.1, ease: "easeInOut" }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResultsSkeleton() {
   return (
-    <div className="mt-8 space-y-5">
+    <div className="mt-6 space-y-5 opacity-60">
       {[0, 1, 2].map((i) => (
         <div
           key={i}
