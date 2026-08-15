@@ -24,6 +24,9 @@ import { getObraAccess } from "@/lib/obra-access";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Field, inputClass, ConfirmSubmit } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/ui/loading";
+import { BudgetEvolution } from "@/components/obra/budget-evolution";
+import { ObraProgressRing } from "@/components/obra/obra-progress-ring";
+import { ObraTimeline } from "@/components/obra/obra-timeline";
 import {
   saveRubro,
   deleteRubro,
@@ -87,6 +90,7 @@ export default async function ObraPage({
       expenses: { orderBy: { date: "desc" }, include: { rubro: true } },
       logs: { orderBy: { date: "desc" } },
       participants: { orderBy: { createdAt: "asc" } },
+      adjustments: { orderBy: { date: "desc" } },
     },
   });
   if (!obra) notFound();
@@ -205,6 +209,27 @@ export default async function ObraPage({
         {/* ---------------- RESUMEN ---------------- */}
         {active === "resumen" && (
           <div className="mt-6 space-y-6">
+            {/* Anillo de avance + métricas */}
+            <div className="flex flex-col items-center gap-8 rounded-3xl border border-ink-100 bg-white p-8 shadow-soft md:flex-row md:items-center md:justify-center md:gap-14">
+              <ObraProgressRing pct={avance} />
+              <div className="w-full max-w-sm space-y-4">
+                {obra.rubros.filter((r) => r.progress > 0 && r.progress < 100).slice(0, 3).map((r) => (
+                  <div key={r.id}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-ink-600">{r.name}</span>
+                      <span className="font-semibold text-ink-900">{r.progress}%</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-ink-100">
+                      <div className="h-full rounded-full bg-amber-500" style={{ width: `${r.progress}%` }} />
+                    </div>
+                  </div>
+                ))}
+                <p className="text-sm text-ink-500">
+                  {obra.rubros.filter((r) => r.progress === 100).length} de {obra.rubros.length} etapas terminadas
+                </p>
+              </div>
+            </div>
+
             <div className="grid gap-4 sm:grid-cols-3">
               <Stat label="Presupuesto" value={formatCurrency(presupuesto)} hint="suma de etapas" />
               <Stat
@@ -401,7 +426,19 @@ export default async function ObraPage({
 
         {/* ---------------- DINERO ---------------- */}
         {active === "dinero" && (
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+          <div className="mt-6 space-y-6">
+            <BudgetEvolution
+              obraId={obra.id}
+              baselineTotal={obra.baselineTotal}
+              baselineAt={obra.baselineAt}
+              baselineUsdRate={obra.baselineUsdRate}
+              currentBudget={presupuesto}
+              adjustments={obra.adjustments}
+              gastado={gastado}
+              canEdit={canEdit}
+              canApprove={access.canManage}
+            />
+          <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <div>
               <div className="mb-4 grid gap-3 sm:grid-cols-3">
                 <Stat label="Presupuesto" value={formatCurrency(presupuesto)} />
@@ -473,6 +510,7 @@ export default async function ObraPage({
               </SubmitButton>
             </form>
             )}
+          </div>
           </div>
         )}
 
@@ -584,6 +622,15 @@ export default async function ObraPage({
         {active === "libro" && (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <div className="space-y-4">
+              {/* Historia de la obra: lo que el propietario quiere ver */}
+              <ObraTimeline entries={obra.logs} />
+
+              {canEdit && obra.logs.length > 0 && (
+                <details className="group rounded-2xl border border-ink-100 bg-white">
+                  <summary className="cursor-pointer list-none px-5 py-3 text-sm font-medium text-ink-500">
+                    Administrar entradas
+                  </summary>
+                  <div className="space-y-3 border-t border-ink-100 p-4">
               {obra.logs.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-400">
                   Todavía no hay entradas. Registrá qué se hizo cada día.
@@ -618,6 +665,9 @@ export default async function ObraPage({
                     </div>
                   </div>
                 ))
+              )}
+                  </div>
+                </details>
               )}
             </div>
 

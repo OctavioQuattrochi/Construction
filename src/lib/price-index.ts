@@ -266,6 +266,40 @@ export async function getPriceIndex(): Promise<PriceIndexRow[]> {
   return rows.filter((r): r is PriceIndexRow => r != null);
 }
 
+/**
+ * Variación porcentual promedio de los materiales desde una fecha hasta hoy.
+ * Se calcula con los snapshots del cron: compara el precio más cercano a esa
+ * fecha contra el último de cada material. Devuelve null si no hay historial.
+ */
+export async function materialsVariationSince(
+  since: Date
+): Promise<number | null> {
+  const keys = priceableKeys();
+  const variations: number[] = [];
+
+  await Promise.all(
+    keys.map(async (material) => {
+      const [old, latest] = await Promise.all([
+        db.priceSnapshot
+          .findFirst({
+            where: { material, capturedAt: { lte: since } },
+            orderBy: { capturedAt: "desc" },
+          })
+          .catch(() => null),
+        db.priceSnapshot
+          .findFirst({ where: { material }, orderBy: { capturedAt: "desc" } })
+          .catch(() => null),
+      ]);
+      if (old && latest && old.price > 0 && old.id !== latest.id) {
+        variations.push(((latest.price - old.price) / old.price) * 100);
+      }
+    })
+  );
+
+  if (variations.length === 0) return null;
+  return variations.reduce((s, v) => s + v, 0) / variations.length;
+}
+
 /** Historial de un material (para tendencia). */
 export async function getPriceHistory(material: string, take = 30) {
   try {

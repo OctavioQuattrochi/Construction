@@ -139,7 +139,13 @@ model Obra {
   startDate    DateTime?
   estimatedEnd DateTime?
   status       String         @default("planificacion") // planificacion | ejecucion | terminada | pausada
+  // Línea base: el presupuesto original NO se toca. Los aumentos se registran
+  // como ajustes, así siempre se ve por qué subió la obra.
+  baselineTotal   Float?
+  baselineAt      DateTime?
+  baselineUsdRate Float? // cotización del dólar al fijar la línea base
   rubros       ObraRubro[]
+  adjustments  ObraAdjustment[]
   materials    ObraMaterial[]
   expenses     ObraExpense[]
   logs         ObraLog[]
@@ -148,6 +154,26 @@ model Obra {
   updatedAt    DateTime       @updatedAt
 
   @@index([memberId])
+}
+
+/**
+ * Ajuste del presupuesto. La clave del modelo: nunca se edita el presupuesto
+ * original, se suman ajustes con su motivo. Así el propietario ve exactamente
+ * cuánto subió por inflación y cuánto por cambios que él pidió.
+ */
+model ObraAdjustment {
+  id        String   @id @default(cuid())
+  obraId    String
+  obra      Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  type      String // inflacion | cambio | correccion
+  amount    Float // puede ser negativo (ahorro / reducción de alcance)
+  reason    String
+  days      Int      @default(0) // impacto en el plazo
+  approved  Boolean  @default(false) // los "cambio" los aprueba el propietario
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@index([obraId])
 }
 
 // Participante invitado a una obra. Se invita por email: si todavía no tiene

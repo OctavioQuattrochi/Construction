@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
 import { getObraAccess } from "@/lib/obra-access";
+import { materialsVariationSince } from "@/lib/price-index";
 
 async function requireMember() {
   const session = await getMemberSession();
@@ -98,6 +99,111 @@ export async function deleteObra(fd: FormData) {
   await db.obra.delete({ where: { id } });
   revalidatePath("/mi-obra");
   redirect("/mi-obra");
+}
+
+// -------------------------------------------------------------- PRESUPUESTO
+/** Congela el presupuesto actual como línea base (el "original" de la obra). */
+export async function setBaseline(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+
+  const rubros = await db.obraRubro.findMany({ where: { obraId } });
+  const total = rubros.reduce((s, r) => s + r.budgeted, 0);
+  if (total <= 0) return;
+
+  await db.obra.update({
+    where: { id: obraId },
+    data: {
+      baselineTotal: total,
+      baselineAt: new Date(),
+      baselineUsdRate: num(fd, "usdRate") || null,
+    },
+  });
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+/** Registra un ajuste: inflación, cambio pedido por el propietario o corrección. */
+export async function addAdjustment(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+
+  const type = str(fd, "type");
+  const amount = num(fd, "amount");
+  const reason = str(fd, "reason");
+  if (!reason || amount === 0) return;
+
+  await db.obraAdjustment.create({
+    data: {
+      obraId,
+      type: ["inflacion", "cambio", "correccion"].includes(type) ? type : "cambio",
+      amount,
+      reason,
+      days: Math.round(num(fd, "days")),
+      // La inflación y las correcciones no requieren aprobación; los cambios sí.
+      approved: type !== "cambio",
+    },
+  });
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+/** El propietario aprueba (o rechaza) un cambio propuesto. */
+export async function approveAdjustment(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  // Aprobar es potestad de quien administra la obra (el propietario/creador).
+  await manageObra(obraId, m.id, m.email);
+  await db.obraAdjustment.update({
+    where: { id: str(fd, "id") },
+    data: { approved: true },
+  });
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+export async function deleteAdjustment(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+  await db.obraAdjustment.delete({ where: { id: str(fd, "id") } });
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+/**
+ * Actualiza el presupuesto por inflación usando el índice de precios REAL de
+ * BildAp: compara el precio de los materiales de hace X con el de hoy y propone
+ * el ajuste. Es la ventaja de tener el histórico del comparador.
+ */
+export async function applyInflation(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+
+  const obra = await db.obra.findUnique({ where: { id: obraId } });
+  if (!obra?.baselineAt || !obra.baselineTotal) return;
+
+  const variation = await materialsVariationSince(obra.baselineAt);
+  if (variation == null || Math.abs(variation) < 0.5) return;
+
+  // Ya ajustado por inflación antes: sólo sumamos la diferencia no cubierta.
+  const previos = await db.obraAdjustment.aggregate({
+    where: { obraId, type: "inflacion" },
+    _sum: { amount: true },
+  });
+  const objetivo = (obra.baselineTotal * variation) / 100;
+  const delta = Math.round(objetivo - (previos._sum.amount ?? 0));
+  if (Math.abs(delta) < 1) return;
+
+  await db.obraAdjustment.create({
+    data: {
+      obraId,
+      type: "inflacion",
+      amount: delta,
+      reason: `Actualización por variación de precios de materiales (${variation > 0 ? "+" : ""}${variation.toFixed(1)}% desde ${obra.baselineAt.toLocaleDateString("es-AR")})`,
+      approved: true,
+    },
+  });
+  revalidatePath(`/mi-obra/${obraId}`);
 }
 
 // ----------------------------------------------------------- PARTICIPANTES
