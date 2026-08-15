@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CheckCircle2, Sparkles, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Sparkles, ShieldCheck, FlaskConical } from "lucide-react";
 import { LogoMark } from "@/components/ui/logo";
 import { getMemberSession, isGoogleConfigured } from "@/lib/member-auth";
 import { site } from "@/lib/site";
@@ -29,6 +29,8 @@ export default async function IngresarPage({
   if (session) redirect("/");
   const { error } = await searchParams;
   const configured = isGoogleConfigured();
+  // Acceso de prueba: sólo visible en desarrollo local.
+  const devLogin = process.env.ALLOW_DEV_LOGIN === "true";
 
   return (
     <section className="relative overflow-hidden">
@@ -83,6 +85,15 @@ export default async function IngresarPage({
               <div className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ink-200 bg-concrete-50 py-3 text-sm font-medium text-ink-400">
                 <Sparkles className="h-4 w-4" /> Ingreso con Google · próximamente
               </div>
+            )}
+
+            {devLogin && (
+              <a
+                href="/api/auth/dev-login"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-amber-400 bg-amber-500/10 py-3 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-500/20"
+              >
+                <FlaskConical className="h-4 w-4" /> Entrar como usuario de prueba
+              </a>
             )}
 
             <p className="mt-6 flex items-center justify-center gap-1.5 text-xs text-ink-400">

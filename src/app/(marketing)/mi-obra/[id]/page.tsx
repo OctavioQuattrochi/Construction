@@ -12,6 +12,7 @@ import {
   Trash2,
   Plus,
   AlertTriangle,
+  HardHat,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
@@ -108,27 +109,53 @@ export default async function ObraPage({
           <ArrowLeft className="h-4 w-4" /> Mis obras
         </Link>
 
-        {/* Encabezado */}
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-bold text-ink-900">{obra.name}</h1>
-            <p className="mt-1 flex flex-wrap items-center gap-3 text-sm text-ink-500">
-              {obra.location && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4 text-amber-500" /> {obra.location}
-                </span>
-              )}
-              {obra.startDate && (
-                <span>Inicio {obra.startDate.toLocaleDateString("es-AR")}</span>
-              )}
-              {obra.estimatedEnd && (
-                <span>· Entrega estimada {obra.estimatedEnd.toLocaleDateString("es-AR")}</span>
-              )}
-            </p>
+        {/* Encabezado tipo tablero */}
+        <div className="mt-4 overflow-hidden rounded-3xl bg-ink-950 text-white shadow-elevated">
+          <div className="relative p-6 md:p-8">
+            <div className="pointer-events-none absolute inset-0 bg-grid-light bg-[size:56px_56px] opacity-[0.12]" />
+            <div className="relative flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-400">
+                  <HardHat className="h-4 w-4" /> Mi obra
+                </p>
+                <h1 className="mt-2 font-display text-3xl font-bold md:text-4xl">
+                  {obra.name}
+                </h1>
+                <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-concrete-300">
+                  {obra.location && (
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4 text-amber-400" /> {obra.location}
+                    </span>
+                  )}
+                  {obra.startDate && (
+                    <span>Inicio {obra.startDate.toLocaleDateString("es-AR")}</span>
+                  )}
+                  {obra.estimatedEnd && (
+                    <span>· Entrega estimada {obra.estimatedEnd.toLocaleDateString("es-AR")}</span>
+                  )}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-amber-500 px-3.5 py-1.5 text-sm font-semibold text-ink-950">
+                {statusLabel[obra.status] ?? obra.status}
+              </span>
+            </div>
+
+            {/* Barras de avance vs gasto */}
+            <div className="relative mt-7 grid gap-5 sm:grid-cols-2">
+              <MiniBar
+                label="Avance de obra"
+                pct={avance}
+                value={`${avance}%`}
+                barClass="bg-amber-500"
+              />
+              <MiniBar
+                label="Presupuesto ejecutado"
+                pct={Math.min(100, gastoPct)}
+                value={`${formatCurrency(gastado)} de ${formatCurrency(presupuesto)}`}
+                barClass={alerta ? "bg-red-500" : "bg-emerald-500"}
+              />
+            </div>
           </div>
-          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-sm font-semibold text-amber-700">
-            {statusLabel[obra.status] ?? obra.status}
-          </span>
         </div>
 
         {/* Tabs */}
@@ -189,7 +216,10 @@ export default async function ObraPage({
                     </div>
                     <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-ink-100">
                       <div
-                        className="h-full rounded-full bg-amber-500"
+                        className={cn(
+                          "h-full rounded-full transition-all",
+                          r.progress === 100 ? "bg-emerald-500" : "bg-amber-500"
+                        )}
                         style={{ width: `${r.progress}%` }}
                       />
                     </div>
@@ -228,8 +258,19 @@ export default async function ObraPage({
               <form
                 key={r.id}
                 action={saveRubro}
-                className="flex flex-wrap items-end gap-3 rounded-2xl border border-ink-100 bg-white p-4 shadow-soft"
+                className="relative overflow-hidden rounded-2xl border border-ink-100 bg-white p-4 shadow-soft"
               >
+                {/* Barra de avance de fondo */}
+                <div className="absolute inset-x-0 top-0 h-1 bg-ink-100">
+                  <div
+                    className={cn(
+                      "h-full transition-all",
+                      r.progress === 100 ? "bg-emerald-500" : "bg-amber-500"
+                    )}
+                    style={{ width: `${r.progress}%` }}
+                  />
+                </div>
+                <div className="flex flex-wrap items-end gap-3">
                 <input type="hidden" name="obraId" value={obra.id} />
                 <input type="hidden" name="id" value={r.id} />
                 <div className="min-w-[10rem] flex-1">
@@ -272,6 +313,7 @@ export default async function ObraPage({
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </ConfirmSubmit>
+                </div>
               </form>
             ))}
 
@@ -547,6 +589,35 @@ export default async function ObraPage({
         )}
       </div>
     </article>
+  );
+}
+
+function MiniBar({
+  label,
+  pct,
+  value,
+  barClass,
+}: {
+  label: string;
+  pct: number;
+  value: string;
+  barClass: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs font-medium uppercase tracking-wide text-concrete-400">
+          {label}
+        </span>
+        <span className="text-sm font-semibold text-white">{value}</span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+        <div
+          className={cn("h-full rounded-full transition-all", barClass)}
+          style={{ width: `${Math.max(2, Math.min(100, pct))}%` }}
+        />
+      </div>
+    </div>
   );
 }
 

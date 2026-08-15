@@ -47,12 +47,12 @@ export function Navbar({ member = null }: { member?: Member }) {
             : "border-b border-transparent bg-transparent"
         )}
       >
-        <nav className="container-x flex h-16 items-center justify-between md:h-[4.5rem]">
+        <nav className="container-x flex h-16 items-center justify-between gap-4 md:h-[4.5rem]">
           <Link href="/" aria-label={site.brand} className="shrink-0">
             <Logo />
           </Link>
 
-          <div className="hidden items-center gap-1 lg:flex">
+          <div className="hidden items-center gap-0.5 lg:flex">
             {nav.map((item) => {
               const active =
                 item.href === pathname ||
@@ -64,10 +64,10 @@ export function Navbar({ member = null }: { member?: Member }) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200",
+                    "whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200 xl:px-4",
                     active
-                      ? "text-ink-900"
-                      : "text-ink-500 hover:text-ink-900 hover:bg-ink-50"
+                      ? "bg-ink-50 text-ink-900"
+                      : "text-ink-500 hover:bg-ink-50 hover:text-ink-900"
                   )}
                 >
                   {item.label}
@@ -162,7 +162,11 @@ export function Navbar({ member = null }: { member?: Member }) {
           >
             <div className="mt-2 rounded-3xl border border-ink-100 bg-white p-4 shadow-elevated">
               <div className="flex flex-col">
-                {nav.map((item) => (
+                {[
+                  ...nav,
+                  { label: "Servicios", href: "/#servicios" },
+                  { label: "Contacto", href: "/contacto" },
+                ].map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}

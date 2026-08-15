@@ -23,6 +23,8 @@ export const site = {
 } as const;
 
 // Navegación principal. "Mi obra" es el corazón de la plataforma y va primero.
+// Se mantiene corta a propósito: "Contacto" ya está en el botón "Consultar" y
+// "Servicios" es un ancla de la home (ambos viven en el footer).
 export const nav = [
   { label: "Mi obra", href: "/mi-obra" },
   { label: "Calculadoras", href: "/calculadoras" },
@@ -30,8 +32,6 @@ export const nav = [
   { label: "Profesionales", href: "/profesionales" },
   { label: "Inmuebles", href: "/inmuebles" },
   { label: "Conocimiento", href: "/conocimiento" },
-  { label: "Servicios", href: "/#servicios" },
-  { label: "Contacto", href: "/contacto" },
 ] as const;
 
 export const footerNav = {
