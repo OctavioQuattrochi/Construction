@@ -53,6 +53,15 @@
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+  /* Barra de carga indeterminada. */
+  @keyframes loading-slide {
+    0% {
+      transform: translateX(-120%);
+    }
+    100% {
+      transform: translateX(320%);
+    }
+  }
   /* Impresión / PDF: aislar el presupuesto de obra (oculta navbar, footer, etc.). */
   @media print {
     body * {

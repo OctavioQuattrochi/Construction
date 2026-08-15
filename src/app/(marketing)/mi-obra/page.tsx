@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { HardHat, ArrowRight, MapPin, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Field, inputClass } from "@/components/admin/ui";
+import { SubmitButton } from "@/components/ui/loading";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
 import { formatCurrency } from "@/lib/utils";
@@ -150,12 +151,12 @@ export default async function MiObraPage() {
                 <option value="terminada">Terminada</option>
               </select>
             </Field>
-            <button
-              type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-semibold text-ink-950 transition-colors hover:bg-amber-600"
+            <SubmitButton
+              pendingText="Creando tu obra…"
+              className="w-full rounded-xl bg-amber-500 py-3 font-semibold text-ink-950 hover:bg-amber-600"
             >
               Crear obra <ArrowRight className="h-4 w-4" />
-            </button>
+            </SubmitButton>
             <p className="text-xs text-ink-400">
               Se crean las etapas típicas de obra para que sólo cargues tus montos.
             </p>

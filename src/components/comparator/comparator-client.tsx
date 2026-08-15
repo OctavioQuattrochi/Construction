@@ -31,7 +31,7 @@ import type {
 import { productMatch } from "@/lib/providers/match";
 import { useBasket } from "./use-basket";
 import { ComparatorBasket } from "./comparator-basket";
-import { trackSearch } from "@/lib/track";
+import { trackSearch, trackOfferClick, trackBasketAdd } from "@/lib/track";
 
 const SUGGESTIONS = [
   "cemento",
@@ -170,7 +170,7 @@ export function ComparatorClient() {
   const addToBasket = useCallback(
     (g: Grouped) => {
       const o = g.offers.find((x) => x.price != null);
-      if (o)
+      if (o) {
         basket.add({
           title: o.title,
           store: o.provider.name,
@@ -178,6 +178,8 @@ export function ComparatorClient() {
           unitPrice: o.price!,
           url: o.url,
         });
+        trackBasketAdd(o.title, o.provider.name, o.price!);
+      }
     },
     [basket]
   );
@@ -708,6 +710,7 @@ function OfferRow({
           href={offer.url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackOfferClick(offer.provider.name, offer.title, live)}
           className={cn(
             "inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium transition-all btn-focus",
             best

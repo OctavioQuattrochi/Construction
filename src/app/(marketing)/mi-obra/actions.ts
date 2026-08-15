@@ -104,6 +104,49 @@ export async function saveRubro(fd: FormData) {
   revalidatePath(`/mi-obra/${obraId}`);
 }
 
+/**
+ * Distribución típica del costo de una obra por etapa (referencia del rubro en
+ * Argentina). Sirve como ancla: el usuario carga UN número (el total) y no tiene
+ * que adivinar cuánto vale cada etapa. Después puede ajustar a mano.
+ */
+const BUDGET_SHARES: Record<string, number> = {
+  "Movimiento de suelos": 3,
+  Fundaciones: 9,
+  Estructura: 18,
+  Mampostería: 12,
+  Techos: 10,
+  Instalaciones: 15,
+  Revoques: 8,
+  "Pisos y revestimientos": 13,
+  Terminaciones: 12,
+};
+
+/** Reparte un presupuesto total entre las etapas usando los % de referencia. */
+export async function distributeBudget(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id);
+  const total = num(fd, "total");
+  if (total <= 0) return;
+
+  const rubros = await db.obraRubro.findMany({ where: { obraId } });
+  // Sólo repartimos entre las etapas conocidas; si hay otras, se prorratean igual.
+  const shares = rubros.map((r) => BUDGET_SHARES[r.name] ?? 0);
+  const known = shares.reduce((s, v) => s + v, 0);
+  const fallback = known > 0 ? 0 : 100 / rubros.length;
+
+  await Promise.all(
+    rubros.map((r, i) => {
+      const pct = known > 0 ? (shares[i] / known) * 100 : fallback;
+      return db.obraRubro.update({
+        where: { id: r.id },
+        data: { budgeted: Math.round((total * pct) / 100) },
+      });
+    })
+  );
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
 export async function deleteRubro(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");

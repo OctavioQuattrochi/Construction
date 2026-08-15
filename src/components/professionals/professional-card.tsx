@@ -1,8 +1,11 @@
+"use client";
+
 import { MapPin, Mail, MessageCircle, Phone, BadgeCheck } from "lucide-react";
 import type { Professional } from "@prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { toList } from "@/lib/utils";
 import { SaveButton } from "@/components/member/save-button";
+import { trackProContact } from "@/lib/track";
 
 export function ProfessionalCard({
   pro,
@@ -90,6 +93,7 @@ export function ProfessionalCard({
             href={`https://wa.me/${wa.replace(/\D/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackProContact(pro.slug, pro.profession, "whatsapp")}
             className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366]/10 px-3 py-1.5 text-sm font-medium text-[#0a7d3e] transition-colors hover:bg-[#25D366]/20"
           >
             <MessageCircle className="h-4 w-4" /> WhatsApp
@@ -98,6 +102,7 @@ export function ProfessionalCard({
         {pro.email && (
           <a
             href={`mailto:${pro.email}`}
+            onClick={() => trackProContact(pro.slug, pro.profession, "email")}
             className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-sm font-medium text-ink-700 transition-colors hover:border-ink-900"
           >
             <Mail className="h-4 w-4" /> Email
@@ -106,6 +111,7 @@ export function ProfessionalCard({
         {pro.phone && !pro.whatsapp && (
           <a
             href={`tel:${pro.phone}`}
+            onClick={() => trackProContact(pro.slug, pro.profession, "telefono")}
             className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 px-3 py-1.5 text-sm font-medium text-ink-700 transition-colors hover:border-ink-900"
           >
             <Phone className="h-4 w-4" /> Llamar

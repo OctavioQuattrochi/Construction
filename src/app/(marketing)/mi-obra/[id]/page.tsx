@@ -13,14 +13,17 @@ import {
   Plus,
   AlertTriangle,
   HardHat,
+  Sparkles,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Field, inputClass, ConfirmSubmit } from "@/components/admin/ui";
+import { SubmitButton } from "@/components/ui/loading";
 import {
   saveRubro,
   deleteRubro,
+  distributeBudget,
   saveMaterial,
   setMaterialStatus,
   deleteMaterial,
@@ -254,6 +257,34 @@ export default async function ObraPage({
         {/* ---------------- AVANCE ---------------- */}
         {active === "avance" && (
           <div className="mt-6 space-y-3">
+            {/* Atajo: cargar un solo número y repartirlo con los % típicos de obra */}
+            <form
+              action={distributeBudget}
+              className="flex flex-wrap items-end gap-3 rounded-2xl border border-amber-200 bg-amber-500/10 p-4"
+            >
+              <input type="hidden" name="obraId" value={obra.id} />
+              <div className="min-w-[12rem] flex-1">
+                <Field
+                  label="¿Cuánto pensás invertir en total?"
+                  hint="Lo repartimos entre las etapas con los porcentajes típicos de una obra. Después ajustás lo que quieras."
+                >
+                  <input
+                    name="total"
+                    type="number"
+                    step="1000"
+                    placeholder="50000000"
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+              <SubmitButton
+                pendingText="Repartiendo…"
+                className="rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-ink-800"
+              >
+                <Sparkles className="h-4 w-4 text-amber-400" /> Repartir por etapa
+              </SubmitButton>
+            </form>
+
             {obra.rubros.map((r) => (
               <form
                 key={r.id}
@@ -301,12 +332,12 @@ export default async function ObraPage({
                     />
                   </Field>
                 </div>
-                <button
-                  type="submit"
+                <SubmitButton
+                  pendingText="Guardando…"
                   className="rounded-xl bg-ink-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-ink-800"
                 >
                   Guardar
-                </button>
+                </SubmitButton>
                 <ConfirmSubmit
                   message={`¿Eliminar la etapa “${r.name}”?`}
                   formAction={deleteRubro}
@@ -332,12 +363,12 @@ export default async function ObraPage({
                   <input name="budgeted" type="number" step="0.01" defaultValue={0} className={inputClass} />
                 </Field>
               </div>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-600"
+              <SubmitButton
+                pendingText="Agregando…"
+                className="rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-semibold text-ink-950 hover:bg-amber-600"
               >
                 <Plus className="h-4 w-4" /> Agregar
-              </button>
+              </SubmitButton>
             </form>
           </div>
         )}
@@ -407,12 +438,12 @@ export default async function ObraPage({
               <Field label="Fecha">
                 <input name="date" type="date" className={inputClass} />
               </Field>
-              <button
-                type="submit"
+              <SubmitButton
+                pendingText="Registrando…"
                 className="w-full rounded-xl bg-amber-500 py-3 font-semibold text-ink-950 hover:bg-amber-600"
               >
                 Registrar
-              </button>
+              </SubmitButton>
             </form>
           </div>
         )}
@@ -502,12 +533,12 @@ export default async function ObraPage({
               <Field label="Precio unitario" hint="Opcional.">
                 <input name="unitPrice" type="number" step="0.01" className={inputClass} />
               </Field>
-              <button
-                type="submit"
+              <SubmitButton
+                pendingText="Agregando…"
                 className="w-full rounded-xl bg-amber-500 py-3 font-semibold text-ink-950 hover:bg-amber-600"
               >
                 Agregar
-              </button>
+              </SubmitButton>
               <p className="text-xs text-ink-400">
                 También podés mandarlos directo desde las{" "}
                 <Link href="/calculadoras" className="font-medium text-amber-600 hover:underline">
@@ -578,12 +609,12 @@ export default async function ObraPage({
               <Field label="Fecha">
                 <input name="date" type="date" className={inputClass} />
               </Field>
-              <button
-                type="submit"
+              <SubmitButton
+                pendingText="Registrando…"
                 className="w-full rounded-xl bg-amber-500 py-3 font-semibold text-ink-950 hover:bg-amber-600"
               >
                 Registrar
-              </button>
+              </SubmitButton>
             </form>
           </div>
         )}
