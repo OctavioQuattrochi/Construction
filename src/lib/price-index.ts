@@ -236,34 +236,49 @@ export interface PriceIndexRow {
   changePct: number | null; // variación vs el snapshot anterior
 }
 
-/** Índice de precios: último valor de cada material + su variación. */
+/**
+ * Índice de precios: último valor de cada material + su variación.
+ * Una sola consulta (antes eran 2 por material) y el agrupado se hace en memoria:
+ * los viajes a la base son lo caro, no procesar unas filas acá.
+ */
 export async function getPriceIndex(): Promise<PriceIndexRow[]> {
-  const keys = priceableKeys();
-  const rows = await Promise.all(
-    keys.map(async (material) => {
-      const snaps = await db.priceSnapshot
-        .findMany({
-          where: { material },
-          orderBy: { capturedAt: "desc" },
-          take: 2,
-        })
-        .catch(() => []);
-      if (snaps.length === 0) return null;
-      const [latest, prev] = snaps;
-      return {
-        material,
-        price: latest.price,
-        unit: latest.unit,
-        storeName: latest.providerName,
-        capturedAt: latest.capturedAt.toISOString(),
-        changePct:
-          prev && prev.price > 0
-            ? ((latest.price - prev.price) / prev.price) * 100
-            : null,
-      } satisfies PriceIndexRow;
-    })
-  );
-  return rows.filter((r): r is PriceIndexRow => r != null);
+  let snaps: Awaited<ReturnType<typeof db.priceSnapshot.findMany>>;
+  try {
+    snaps = await db.priceSnapshot.findMany({
+      orderBy: { capturedAt: "desc" },
+      take: 400, // suficiente para tener las últimas 2 lecturas de cada material
+    });
+  } catch {
+    return [];
+  }
+
+  const byMaterial = new Map<string, typeof snaps>();
+  for (const s of snaps) {
+    const list = byMaterial.get(s.material) ?? [];
+    if (list.length < 2) {
+      list.push(s);
+      byMaterial.set(s.material, list);
+    }
+  }
+
+  const rows: PriceIndexRow[] = [];
+  for (const material of priceableKeys()) {
+    const list = byMaterial.get(material);
+    if (!list || list.length === 0) continue;
+    const [latest, prev] = list;
+    rows.push({
+      material,
+      price: latest.price,
+      unit: latest.unit,
+      storeName: latest.providerName,
+      capturedAt: latest.capturedAt.toISOString(),
+      changePct:
+        prev && prev.price > 0
+          ? ((latest.price - prev.price) / prev.price) * 100
+          : null,
+    });
+  }
+  return rows;
 }
 
 /**

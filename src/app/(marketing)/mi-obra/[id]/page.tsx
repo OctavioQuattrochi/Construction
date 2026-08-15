@@ -17,6 +17,7 @@ import {
   Users,
   Eye,
   Mail,
+  FileText,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
@@ -82,21 +83,34 @@ export default async function ObraPage({
   const { tab } = await searchParams;
   const active = TABS.find((t) => t.key === tab)?.key ?? "resumen";
 
+  // Cada relación es una consulta aparte: cargamos sólo lo que la pestaña usa.
+  // rubros y expenses siempre (alimentan las métricas del encabezado).
   const obra = await db.obra.findUnique({
     where: { id },
     include: {
       rubros: { orderBy: { order: "asc" } },
-      materials: { orderBy: { createdAt: "desc" } },
-      expenses: { orderBy: { date: "desc" }, include: { rubro: true } },
-      logs: { orderBy: { date: "desc" } },
-      participants: { orderBy: { createdAt: "asc" } },
-      adjustments: { orderBy: { date: "desc" } },
+      expenses: { orderBy: { date: "desc" } },
+      ...(active === "materiales"
+        ? { materials: { orderBy: { createdAt: "desc" as const } } }
+        : {}),
+      ...(active === "libro"
+        ? { logs: { orderBy: { date: "desc" as const } } }
+        : {}),
+      ...(active === "gente"
+        ? { participants: { orderBy: { createdAt: "asc" as const } } }
+        : {}),
+      ...(active === "dinero"
+        ? { adjustments: { orderBy: { date: "desc" as const } } }
+        : {}),
     },
   });
   if (!obra) notFound();
-  const access = await getObraAccess(obra.id, member);
+  const access = await getObraAccess(obra.id, member, obra.memberId);
   if (!access) notFound();
   const canEdit = access.canEdit;
+
+  // El nombre del rubro sale de los que ya trajimos: evita otra consulta.
+  const rubroName = new Map(obra.rubros.map((r) => [r.id, r.name]));
 
   // --- métricas ---
   const presupuesto = obra.rubros.reduce((s, r) => s + r.budgeted, 0);
@@ -153,9 +167,17 @@ export default async function ObraPage({
                   )}
                 </p>
               </div>
-              <span className="shrink-0 rounded-full bg-amber-500 px-3.5 py-1.5 text-sm font-semibold text-ink-950">
-                {statusLabel[obra.status] ?? obra.status}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <Link
+                  href={`/mi-obra/${obra.id}/informe`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
+                >
+                  <FileText className="h-4 w-4" /> Informe PDF
+                </Link>
+                <span className="rounded-full bg-amber-500 px-3.5 py-1.5 text-sm font-semibold text-ink-950">
+                  {statusLabel[obra.status] ?? obra.status}
+                </span>
+              </div>
             </div>
 
             {/* Barras de avance vs gasto */}
@@ -287,7 +309,7 @@ export default async function ObraPage({
                         <p className="truncate text-ink-700">{e.description}</p>
                         <p className="text-xs text-ink-400">
                           {e.date.toLocaleDateString("es-AR")}
-                          {e.rubro ? ` · ${e.rubro.name}` : ""}
+                          {e.rubroId ? ` · ${rubroName.get(e.rubroId) ?? ""}` : ""}
                         </p>
                       </div>
                       <span className="shrink-0 font-mono font-medium text-ink-900">
@@ -314,7 +336,11 @@ export default async function ObraPage({
               <div className="min-w-[12rem] flex-1">
                 <Field
                   label="¿Cuánto pensás invertir en total?"
-                  hint="Lo repartimos entre las etapas con los porcentajes típicos de una obra. Después ajustás lo que quieras."
+                  hint={
+                    presupuesto > 0
+                      ? `Hoy tenés ${formatCurrency(presupuesto)} repartidos. Al confirmar se reemplaza el monto de cada etapa de abajo.`
+                      : "Se completa el presupuesto de cada etapa de abajo con los porcentajes típicos de una obra."
+                  }
                 >
                   <input
                     name="total"
@@ -336,7 +362,9 @@ export default async function ObraPage({
 
             {obra.rubros.map((r) => (
               <form
-                key={r.id}
+                // El valor va en la key: los inputs no controlados no refrescan
+                // su defaultValue al re-renderizar, hay que remontarlos.
+                key={`${r.id}-${r.budgeted}-${r.progress}`}
                 action={saveRubro}
                 className="relative overflow-hidden rounded-2xl border border-ink-100 bg-white p-4 shadow-soft"
               >
@@ -354,7 +382,14 @@ export default async function ObraPage({
                 <input type="hidden" name="obraId" value={obra.id} />
                 <input type="hidden" name="id" value={r.id} />
                 <div className="min-w-[10rem] flex-1">
-                  <Field label="Etapa">
+                  <Field
+                    label="Etapa"
+                    hint={
+                      presupuesto > 0
+                        ? `${((r.budgeted / presupuesto) * 100).toFixed(1)}% del presupuesto`
+                        : undefined
+                    }
+                  >
                     <input name="name" defaultValue={r.name} className={inputClass} />
                   </Field>
                 </div>
@@ -457,7 +492,7 @@ export default async function ObraPage({
                         <p className="truncate font-medium text-ink-900">{e.description}</p>
                         <p className="text-xs text-ink-400">
                           {e.date.toLocaleDateString("es-AR")}
-                          {e.rubro ? ` · ${e.rubro.name}` : ""}
+                          {e.rubroId ? ` · ${rubroName.get(e.rubroId) ?? ""}` : ""}
                         </p>
                       </div>
                       <span className="shrink-0 font-mono font-semibold text-ink-900">

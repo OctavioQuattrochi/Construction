@@ -283,19 +283,24 @@ export async function distributeBudget(fd: FormData) {
   if (total <= 0) return;
 
   const rubros = await db.obraRubro.findMany({ where: { obraId } });
-  // Sólo repartimos entre las etapas conocidas; si hay otras, se prorratean igual.
-  const shares = rubros.map((r) => BUDGET_SHARES[r.name] ?? 0);
-  const known = shares.reduce((s, v) => s + v, 0);
-  const fallback = known > 0 ? 0 : 100 / rubros.length;
+  if (rubros.length === 0) return;
+
+  // Las etapas estándar usan su porcentaje típico. Las que agregó el usuario
+  // (ej. "Pileta") reciben el promedio de las conocidas, para que nunca queden
+  // en cero. Después se normaliza todo para que sume exactamente el total.
+  const knownValues = Object.values(BUDGET_SHARES);
+  const avgShare =
+    knownValues.reduce((s, v) => s + v, 0) / knownValues.length;
+  const shares = rubros.map((r) => BUDGET_SHARES[r.name] ?? avgShare);
+  const sum = shares.reduce((s, v) => s + v, 0);
 
   await Promise.all(
-    rubros.map((r, i) => {
-      const pct = known > 0 ? (shares[i] / known) * 100 : fallback;
-      return db.obraRubro.update({
+    rubros.map((r, i) =>
+      db.obraRubro.update({
         where: { id: r.id },
-        data: { budgeted: Math.round((total * pct) / 100) },
-      });
-    })
+        data: { budgeted: Math.round((total * shares[i]) / sum) },
+      })
+    )
   );
   revalidatePath(`/mi-obra/${obraId}`);
 }

@@ -17,15 +17,21 @@ export interface ObraAccess {
  */
 export async function getObraAccess(
   obraId: string,
-  user: { id: string; email: string }
+  user: { id: string; email: string },
+  /** Si ya tenés el dueño de la obra, pasalo: evita una consulta extra. */
+  knownOwnerId?: string
 ): Promise<ObraAccess | null> {
-  const obra = await db.obra.findUnique({
-    where: { id: obraId },
-    select: { memberId: true },
-  });
-  if (!obra) return null;
+  let ownerId = knownOwnerId;
+  if (ownerId === undefined) {
+    const obra = await db.obra.findUnique({
+      where: { id: obraId },
+      select: { memberId: true },
+    });
+    if (!obra) return null;
+    ownerId = obra.memberId;
+  }
 
-  if (obra.memberId === user.id) {
+  if (ownerId === user.id) {
     return { role: "admin", canEdit: true, canManage: true };
   }
 

@@ -78,6 +78,19 @@
       border: none !important;
       box-shadow: none !important;
     }
+    /* Informe de obra para reuniones. */
+    #informe-obra,
+    #informe-obra * {
+      visibility: visible;
+    }
+    #informe-obra {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      padding: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
   }
   /* Barra fina y sutil, visible y arrastrable (indica que hay más opciones). */
   .thin-scrollbar {
