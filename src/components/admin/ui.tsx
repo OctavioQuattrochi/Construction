@@ -38,15 +38,19 @@ export function AdminHeader({
 export function ConfirmSubmit({
   message = "¿Confirmás esta acción?",
   className,
+  formAction,
   children,
 }: {
   message?: string;
   className?: string;
+  /** Server action alternativa (permite un botón de borrar dentro de otro form). */
+  formAction?: (fd: FormData) => void | Promise<void>;
   children: React.ReactNode;
 }) {
   return (
     <button
       type="submit"
+      formAction={formAction}
       onClick={(e) => {
         if (!confirm(message)) e.preventDefault();
       }}

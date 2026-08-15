@@ -106,6 +106,7 @@ model Member {
   provider      String               @default("google")
   savedItems    SavedItem[]
   calculations  SavedCalculation[]
+  obras         Obra[]
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
 }
@@ -125,6 +126,89 @@ model SavedItem {
 
   @@unique([memberId, type, refId])
   @@index([memberId])
+}
+
+// ---------------------------------------------------------------- MI OBRA
+// El proyecto de obra del usuario: presupuesto, materiales, gastos y bitácora.
+model Obra {
+  id           String         @id @default(cuid())
+  memberId     String
+  member       Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  name         String
+  location     String?
+  startDate    DateTime?
+  estimatedEnd DateTime?
+  status       String         @default("planificacion") // planificacion | ejecucion | terminada | pausada
+  rubros       ObraRubro[]
+  materials    ObraMaterial[]
+  expenses     ObraExpense[]
+  logs         ObraLog[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([memberId])
+}
+
+// Rubro / etapa de obra con su presupuesto y avance declarado.
+model ObraRubro {
+  id        String        @id @default(cuid())
+  obraId    String
+  obra      Obra          @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  name      String
+  budgeted  Float         @default(0)
+  progress  Int           @default(0) // 0-100, declarado por el usuario
+  order     Int           @default(0)
+  expenses  ObraExpense[]
+  createdAt DateTime      @default(now())
+
+  @@index([obraId])
+}
+
+// Material necesario para la obra (viene de calculadoras o del comparador).
+model ObraMaterial {
+  id        String   @id @default(cuid())
+  obraId    String
+  obra      Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  label     String
+  qty       Float    @default(0)
+  unit      String?
+  unitPrice Float? // precio de referencia al momento de agregarlo
+  store     String?
+  url       String?
+  status    String   @default("necesario") // necesario | comprado | recibido
+  source    String   @default("manual") // manual | calculadora | comparador
+  createdAt DateTime @default(now())
+
+  @@index([obraId])
+}
+
+// Gasto / pago registrado en la obra.
+model ObraExpense {
+  id          String     @id @default(cuid())
+  obraId      String
+  obra        Obra       @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  rubroId     String?
+  rubro       ObraRubro? @relation(fields: [rubroId], references: [id], onDelete: SetNull)
+  description String
+  amount      Float
+  date        DateTime   @default(now())
+  createdAt   DateTime   @default(now())
+
+  @@index([obraId])
+}
+
+// Libro/diario de obra: qué se hizo cada día, con foto.
+model ObraLog {
+  id        String   @id @default(cuid())
+  obraId    String
+  obra      Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  date      DateTime @default(now())
+  title     String
+  note      String?
+  photo     String?
+  createdAt DateTime @default(now())
+
+  @@index([obraId, date])
 }
 
 // Cálculos de materiales guardados (presupuestos estimados).

@@ -22,14 +22,15 @@ export const site = {
   },
 } as const;
 
+// Navegación principal. "Mi obra" es el corazón de la plataforma y va primero.
 export const nav = [
-  { label: "Inicio", href: "/" },
-  { label: "Servicios", href: "/#servicios" },
-  { label: "Conocimiento", href: "/conocimiento" },
+  { label: "Mi obra", href: "/mi-obra" },
   { label: "Calculadoras", href: "/calculadoras" },
   { label: "Comparador", href: "/comparador" },
   { label: "Profesionales", href: "/profesionales" },
   { label: "Inmuebles", href: "/inmuebles" },
+  { label: "Conocimiento", href: "/conocimiento" },
+  { label: "Servicios", href: "/#servicios" },
   { label: "Contacto", href: "/contacto" },
 ] as const;
 

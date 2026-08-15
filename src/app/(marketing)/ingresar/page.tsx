@@ -14,9 +14,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const benefits = [
+  "Creá tu obra y controlá presupuesto, materiales y avance",
+  "Guardá tus cálculos y mandalos directo a la obra",
+  "Registrá gastos y llevá el libro de obra con fotos",
   "Guardá inmuebles y profesionales favoritos",
-  "Encontralos siempre a mano en Mi cuenta",
-  "Muy pronto: alertas de precios y cálculos guardados",
 ];
 
 export default async function IngresarPage({
@@ -38,8 +39,8 @@ export default async function IngresarPage({
             Sumate a {site.brand}
           </h1>
           <p className="mt-4 max-w-md text-lg text-ink-500">
-            Creá tu cuenta gratis y aprovechá al máximo la plataforma. Es rápido y
-            seguro.
+            Creá tu obra gratis y controlá presupuesto, materiales, gastos y
+            avance en un solo lugar. Es rápido y seguro.
           </p>
 
           <ul className="mt-8 space-y-3">

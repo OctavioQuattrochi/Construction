@@ -6,11 +6,20 @@ import {
   BookOpen,
   Users,
   Building2,
+  HardHat,
 } from "lucide-react";
 import { Section, SectionHeading } from "@/components/ui/section";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
 
 const tools = [
+  {
+    href: "/mi-obra",
+    icon: HardHat,
+    title: "Mi obra",
+    desc: "Controlá presupuesto, materiales, gastos y avance de tu obra. Gratis con tu cuenta.",
+    tag: "Nuevo",
+    accent: "from-amber-500/25",
+  },
   {
     href: "/comparador",
     icon: ScanBarcode,
@@ -24,7 +33,7 @@ const tools = [
     icon: Calculator,
     title: "Calculadoras de obra",
     desc: "Hormigón, ladrillos, mortero, pintura, membrana y más. Estimá materiales al instante.",
-    tag: "8 herramientas",
+    tag: "15 herramientas",
     accent: "from-blue-500/20",
   },
   {

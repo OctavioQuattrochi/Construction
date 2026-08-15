@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Input, Label, Select } from "@/components/ui/field";
 import { SaveCalculationButton } from "@/components/calculators/save-calculation-button";
+import { AddToObraButton } from "@/components/calculators/add-to-obra-button";
 import { BudgetPanel } from "@/components/calculators/budget-panel";
 import { cn } from "@/lib/utils";
 import {
@@ -687,7 +688,8 @@ export function CalculatorsClient({ isMember = false }: { isMember?: boolean }) 
             )}
 
             {result && (
-              <div className="border-t border-white/10 px-6 py-4">
+              <div className="flex flex-wrap gap-2 border-t border-white/10 px-6 py-4">
+                <AddToObraButton budget={result.budget ?? []} isMember={isMember} />
                 <SaveCalculationButton
                   calcType={activeId}
                   calcName={active.name}

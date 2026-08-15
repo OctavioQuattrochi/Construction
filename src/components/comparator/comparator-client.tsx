@@ -31,6 +31,7 @@ import type {
 import { productMatch } from "@/lib/providers/match";
 import { useBasket } from "./use-basket";
 import { ComparatorBasket } from "./comparator-basket";
+import { trackSearch } from "@/lib/track";
 
 const SUGGESTIONS = [
   "cemento",
@@ -155,6 +156,7 @@ export function ComparatorClient() {
       if (reqId !== requestRef.current) return;
       if (!res.ok) throw new Error(json.error || "Error de búsqueda");
       setData(json as CompareResult);
+      trackSearch(term, (json as CompareResult).totalProducts ?? 0);
     } catch (e) {
       if (reqId !== requestRef.current) return;
       setError(e instanceof Error ? e.message : "Error inesperado");

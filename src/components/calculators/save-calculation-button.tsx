@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Save, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { trackCalcSaved } from "@/lib/track";
 
 export interface CalcRow {
   label: string;
@@ -64,6 +65,7 @@ export function SaveCalculationButton({
       if (!res.ok) throw new Error(json.error || "Error");
       setOpen(false);
       setName("");
+      trackCalcSaved(calcType);
       toast.success("Cálculo guardado");
       router.push("/mi-cuenta?tab=calculos");
     } catch {

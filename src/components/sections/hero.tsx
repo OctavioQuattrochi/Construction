@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -68,8 +69,8 @@ export function Hero() {
             transition={{ duration: 0.8, ease, delay: 0.08 }}
             className="mt-6 max-w-3xl font-display text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[4.1rem]"
           >
-            <span className="text-gradient-amber">BildAp</span>: todo para
-            construir mejor, en un solo lugar.
+            Tu obra, <span className="text-gradient-amber">bajo control</span>{" "}
+            desde la primera decisión.
           </motion.h1>
 
           <motion.p
@@ -78,10 +79,9 @@ export function Hero() {
             transition={{ duration: 0.8, ease, delay: 0.16 }}
             className="mt-6 max-w-xl text-lg leading-relaxed text-concrete-300"
           >
-            BildAp reúne guías técnicas, calculadoras de materiales, comparación
-            de precios entre proveedores, una red de profesionales asociados e
-            inmuebles. La plataforma de referencia para tomar decisiones de
-            construcción en {site.region} y toda Argentina.
+            Calculá materiales, compará precios reales, organizá tu presupuesto y
+            registrá el avance de tu obra en un solo lugar. Gratis, y pensado para
+            construir en {site.region} y toda Argentina.
           </motion.p>
 
           <motion.div
@@ -90,8 +90,8 @@ export function Hero() {
             transition={{ duration: 0.8, ease, delay: 0.24 }}
             className="mt-9 flex flex-wrap items-center gap-3"
           >
-            <ButtonLink href="/comparador" size="lg" variant="primary">
-              Comparar precios
+            <ButtonLink href="/mi-obra" size="lg" variant="primary">
+              Crear mi obra gratis
               <ArrowRight className="h-5 w-5" />
             </ButtonLink>
             <ButtonLink href="/calculadoras" size="lg" variant="dark">
@@ -99,6 +99,23 @@ export function Hero() {
               Calcular materiales
             </ButtonLink>
           </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, ease, delay: 0.3 }}
+            className="mt-4 text-sm text-concrete-400"
+          >
+            Probá las{" "}
+            <Link href="/calculadoras" className="underline hover:text-white">
+              calculadoras
+            </Link>{" "}
+            y el{" "}
+            <Link href="/comparador" className="underline hover:text-white">
+              comparador
+            </Link>{" "}
+            sin registrarte.
+          </motion.p>
 
           <motion.dl
             initial={{ opacity: 0, y: 24 }}
