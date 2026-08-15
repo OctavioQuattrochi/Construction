@@ -198,11 +198,33 @@ model ObraRubro {
   obra      Obra          @relation(fields: [obraId], references: [id], onDelete: Cascade)
   name      String
   budgeted  Float         @default(0)
-  progress  Int           @default(0) // 0-100, declarado por el usuario
+  // 0-100. Si la etapa tiene tareas, se calcula a partir de ellas; si no,
+  // lo carga el usuario a mano (sigue funcionando como antes).
+  progress  Int           @default(0)
   order     Int           @default(0)
   expenses  ObraExpense[]
+  tasks     ObraTask[]
   createdAt DateTime      @default(now())
 
+  @@index([obraId])
+}
+
+/**
+ * Tarea concreta dentro de una etapa ("encadenado terminado", "muros hasta
+ * dintel"). Tildar tareas es como piensa quien está en la obra: mucho más
+ * natural que estimar un porcentaje.
+ */
+model ObraTask {
+  id        String    @id @default(cuid())
+  rubroId   String
+  rubro     ObraRubro @relation(fields: [rubroId], references: [id], onDelete: Cascade)
+  obraId    String // denormalizado: permite traerlas todas de una
+  label     String
+  done      Boolean   @default(false)
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  @@index([rubroId])
   @@index([obraId])
 }
 

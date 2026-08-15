@@ -30,6 +30,8 @@ import { ObraProgressRing } from "@/components/obra/obra-progress-ring";
 import { ObraTimeline } from "@/components/obra/obra-timeline";
 import { ObraTabs } from "@/components/obra/obra-tabs";
 import { ObraStatus } from "@/components/obra/obra-status";
+import { RubroChecklist } from "@/components/obra/rubro-checklist";
+import { tasksFor } from "@/lib/obra-tasks";
 import {
   saveRubro,
   deleteRubro,
@@ -77,7 +79,7 @@ export default async function ObraPage({
 
   // Todo en paralelo: Prisma resuelve los `include` uno tras otro, así que
   // pedir cada relación por separado con Promise.all es bastante más rápido.
-  const [obraRow, rubros, expenses, materials, logs, participants, adjustments] =
+  const [obraRow, rubros, expenses, materials, logs, participants, adjustments, tasks] =
     await Promise.all([
       db.obra.findUnique({ where: { id } }),
       db.obraRubro.findMany({ where: { obraId: id }, orderBy: { order: "asc" } }),
@@ -95,6 +97,7 @@ export default async function ObraPage({
         where: { obraId: id },
         orderBy: { date: "desc" },
       }),
+      db.obraTask.findMany({ where: { obraId: id }, orderBy: { order: "asc" } }),
     ]);
   const obra = obraRow
     ? { ...obraRow, rubros, expenses, materials, logs, participants, adjustments }
@@ -103,6 +106,14 @@ export default async function ObraPage({
   const access = await getObraAccess(obra.id, member, obra.memberId);
   if (!access) notFound();
   const canEdit = access.canEdit;
+
+  // Tareas agrupadas por etapa (el checklist).
+  const tasksByRubro = new Map<string, typeof tasks>();
+  for (const t of tasks) {
+    const list = tasksByRubro.get(t.rubroId) ?? [];
+    list.push(t);
+    tasksByRubro.set(t.rubroId, list);
+  }
 
   // El nombre del rubro sale de los que ya trajimos: evita otra consulta.
   const rubroName = new Map(obra.rubros.map((r) => [r.id, r.name]));
@@ -335,11 +346,10 @@ export default async function ObraPage({
             )}
 
             {obra.rubros.map((r) => (
-              <form
+              <div
                 // El valor va en la key: los inputs no controlados no refrescan
                 // su defaultValue al re-renderizar, hay que remontarlos.
                 key={`${r.id}-${r.budgeted}-${r.progress}`}
-                action={saveRubro}
                 className="relative overflow-hidden rounded-2xl border border-ink-100 bg-white p-4 shadow-soft"
               >
                 {/* Barra de avance de fondo */}
@@ -352,7 +362,7 @@ export default async function ObraPage({
                     style={{ width: `${r.progress}%` }}
                   />
                 </div>
-                <div className="flex flex-wrap items-end gap-3">
+                <form action={saveRubro} className="flex flex-wrap items-end gap-3">
                 <input type="hidden" name="obraId" value={obra.id} />
                 <input type="hidden" name="id" value={r.id} />
                 <div className="min-w-[10rem] flex-1">
@@ -379,14 +389,26 @@ export default async function ObraPage({
                   </Field>
                 </div>
                 <div className="w-28">
-                  <Field label="Avance %">
+                  <Field
+                    label="Avance %"
+                    hint={
+                      (tasksByRubro.get(r.id)?.length ?? 0) > 0
+                        ? "sale del checklist"
+                        : undefined
+                    }
+                  >
                     <input
                       name="progress"
                       type="number"
                       min={0}
                       max={100}
                       defaultValue={r.progress}
-                      className={inputClass}
+                      readOnly={(tasksByRubro.get(r.id)?.length ?? 0) > 0}
+                      className={cn(
+                        inputClass,
+                        (tasksByRubro.get(r.id)?.length ?? 0) > 0 &&
+                          "bg-ink-50 text-ink-500"
+                      )}
                     />
                   </Field>
                 </div>
@@ -402,8 +424,16 @@ export default async function ObraPage({
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </ConfirmSubmit>
-                </div>
-              </form>
+                </form>
+                <RubroChecklist
+                  obraId={obra.id}
+                  rubroId={r.id}
+                  rubroName={r.name}
+                  tasks={tasksByRubro.get(r.id) ?? []}
+                  hasTemplate={tasksFor(r.name).length > 0}
+                  canEdit={canEdit}
+                />
+              </div>
             ))}
 
             {canEdit && (

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
 import { getObraAccess } from "@/lib/obra-access";
 import { materialsVariationSince } from "@/lib/price-index";
+import { tasksFor, progressFromTasks } from "@/lib/obra-tasks";
 
 async function requireMember() {
   const session = await getMemberSession();
@@ -410,5 +411,94 @@ export async function deleteLog(fd: FormData) {
   const obraId = str(fd, "obraId");
   await ownObra(obraId, m.id, m.email);
   await db.obraLog.delete({ where: { id: str(fd, "id") } });
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+// -------------------------------------------------------- CHECKLIST DE TAREAS
+/**
+ * Recalcula el % de la etapa a partir de sus tareas. Todo el resto del sistema
+ * (avance ponderado, alertas, informe) sigue leyendo `rubro.progress`, así que
+ * no hay que tocar nada más.
+ */
+async function syncRubroProgress(rubroId: string) {
+  const tasks = await db.obraTask.findMany({
+    where: { rubroId },
+    select: { done: true },
+  });
+  if (tasks.length === 0) return; // sin tareas: se respeta el % manual
+  await db.obraRubro.update({
+    where: { id: rubroId },
+    data: { progress: progressFromTasks(tasks) },
+  });
+}
+
+/** Carga la plantilla de tareas típicas de la etapa. */
+export async function seedTasks(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+  const rubroId = str(fd, "rubroId");
+
+  const rubro = await db.obraRubro.findUnique({ where: { id: rubroId } });
+  if (!rubro || rubro.obraId !== obraId) return;
+
+  const existing = await db.obraTask.count({ where: { rubroId } });
+  if (existing > 0) return; // no duplicar
+
+  const labels = tasksFor(rubro.name);
+  if (labels.length === 0) return;
+
+  await db.obraTask.createMany({
+    data: labels.map((label, i) => ({ rubroId, obraId, label, order: i })),
+  });
+  await syncRubroProgress(rubroId);
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+export async function addTask(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+  const rubroId = str(fd, "rubroId");
+  const label = str(fd, "label");
+  if (!label) return;
+
+  const rubro = await db.obraRubro.findUnique({ where: { id: rubroId } });
+  if (!rubro || rubro.obraId !== obraId) return;
+
+  const count = await db.obraTask.count({ where: { rubroId } });
+  await db.obraTask.create({
+    data: { rubroId, obraId, label, order: count },
+  });
+  await syncRubroProgress(rubroId);
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+/** Tilda / destilda una tarea y actualiza el avance de la etapa. */
+export async function toggleTask(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+  const id = str(fd, "id");
+
+  const task = await db.obraTask.findUnique({ where: { id } });
+  if (!task || task.obraId !== obraId) return;
+
+  await db.obraTask.update({ where: { id }, data: { done: !task.done } });
+  await syncRubroProgress(task.rubroId);
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+export async function deleteTask(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+  const id = str(fd, "id");
+
+  const task = await db.obraTask.findUnique({ where: { id } });
+  if (!task || task.obraId !== obraId) return;
+
+  await db.obraTask.delete({ where: { id } });
+  await syncRubroProgress(task.rubroId);
   revalidatePath(`/mi-obra/${obraId}`);
 }
