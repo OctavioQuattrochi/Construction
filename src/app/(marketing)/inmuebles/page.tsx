@@ -39,7 +39,7 @@ export default async function InmueblesPage({
             <span className="text-gradient-amber">constructoras e inmobiliarias</span>
           </>
         }
-        description="Casas, departamentos, lotes y locales en venta y alquiler. Publicados por empresas verificadas de la red BildAp."
+        description="Casas, departamentos, lotes y locales en venta y alquiler. Publicados por constructoras e inmobiliarias de la red BildAp."
       >
         <ButtonLink href="/contacto" variant="primary">
           Publicar un inmueble

@@ -39,9 +39,12 @@ export const metadata: Metadata = {
     "BildAp",
   ],
   authors: [{ name: site.company }],
+  // URL canónica: evita contenido duplicado entre dominios/subdominios.
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "es_AR",
+    url: site.url,
     title: `${site.brand} · La plataforma para construir con criterio`,
     description: site.description,
     siteName: site.brand,

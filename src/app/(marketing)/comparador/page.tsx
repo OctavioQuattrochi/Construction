@@ -25,7 +25,7 @@ export default function ComparadorPage() {
             <span className="text-gradient-amber">en un solo lugar</span>
           </>
         }
-        description="Consultamos múltiples proveedores para que compares precio, marca, presentación y disponibilidad antes de comprar. Ideal para armar tu presupuesto con datos reales."
+        description="Traemos precios en vivo desde los sitios de varios proveedores y valores de referencia del resto. Compará precio, presentación y disponibilidad antes de comprar."
       >
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-concrete-400">Proveedores integrados:</span>

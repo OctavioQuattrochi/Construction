@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Building2 } from "lucide-react";
+import Link from "next/link";
+import { Building2, Info } from "lucide-react";
 import type { Property } from "@prisma/client";
 import { PropertyCard } from "./property-card";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
@@ -59,8 +60,24 @@ export function PropertiesClient({
     sync(op, next);
   }
 
+  const demoCount = properties.filter((p) => p.demo).length;
+
   return (
     <>
+      {demoCount > 0 && (
+        <div className="mb-6 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-ink-700">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p>
+            Estamos sumando publicaciones reales. Los avisos marcados{" "}
+            <strong>Demo</strong> son de ejemplo.{" "}
+            <Link href="/contacto" className="font-medium text-amber-700 underline">
+              Publicá tu inmueble
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {operations.map((o) => (

@@ -157,6 +157,7 @@ model Professional {
   specialties String   @default("") // pipe separated
   featured    Boolean  @default(false)
   active      Boolean  @default(true) // controlado por suscripción a futuro
+  demo        Boolean  @default(false) // perfil de ejemplo: se muestra etiquetado
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -185,6 +186,7 @@ model Property {
   whatsapp    String?
   featured    Boolean  @default(false)
   published   Boolean  @default(true)
+  demo        Boolean  @default(false) // aviso de ejemplo: se muestra etiquetado
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

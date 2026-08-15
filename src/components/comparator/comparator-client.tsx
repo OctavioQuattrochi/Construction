@@ -17,6 +17,7 @@ import {
   Store,
   ChevronDown,
   ShoppingCart,
+  Info,
 } from "lucide-react";
 import { Input } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ type Grouped = {
   min: number | null;
   max: number | null;
   savings: number;
+  reliable: boolean;
 };
 
 function groupClient(products: NormalizedProduct[]): Grouped[] {
@@ -80,6 +82,12 @@ function groupClient(products: NormalizedProduct[]): Grouped[] {
       // Cuántas tiendas distintas ofrecen este producto.
       const stores = new Set(offers.map((o) => o.provider.id)).size;
       const merged = Boolean(label) && stores > 1;
+      // Si el más caro vale >3x el más barato, el grupo probablemente mezcla
+      // productos distintos: no anunciamos un "ahorro" que no es real.
+      const min = prices.length ? Math.min(...prices) : null;
+      const max = prices.length ? Math.max(...prices) : null;
+      const reliable =
+        min != null && max != null && min > 0 ? max / min <= 3 : true;
       return {
         sku: key,
         title: merged ? label! : offers[0].title,
@@ -89,9 +97,11 @@ function groupClient(products: NormalizedProduct[]): Grouped[] {
         packageSize: merged ? null : offers[0].packageSize,
         offers,
         stores,
-        min: prices.length ? Math.min(...prices) : null,
-        max: prices.length ? Math.max(...prices) : null,
-        savings: prices.length > 1 ? Math.max(...prices) - Math.min(...prices) : 0,
+        min,
+        max,
+        // Sólo anunciamos ahorro cuando la comparación es creíble.
+        savings: prices.length > 1 && reliable ? max! - min! : 0,
+        reliable,
       };
     })
     .sort((a, b) => (a.min ?? Infinity) - (b.min ?? Infinity));
@@ -580,6 +590,12 @@ function ProductGroup({
                 <p className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-emerald-600">
                   <TrendingDown className="h-3.5 w-3.5" />
                   Ahorrás hasta {formatCurrency(group.savings)}
+                </p>
+              )}
+              {!group.reliable && group.stores > 1 && (
+                <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-ink-400">
+                  <Info className="h-3.5 w-3.5" />
+                  Presentaciones distintas: compará el detalle
                 </p>
               )}
             </>

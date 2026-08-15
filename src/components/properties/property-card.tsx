@@ -56,6 +56,11 @@ export function PropertyCard({
           <span className="rounded-full bg-ink-950/70 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
             {typeLabel[property.type] ?? property.type}
           </span>
+          {property.demo && (
+            <span className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-ink-600 backdrop-blur-sm">
+              Demo
+            </span>
+          )}
         </div>
         <div className="absolute right-3 top-3">
           <SaveButton

@@ -46,6 +46,11 @@ export function ProfessionalCard({
             {pro.featured && (
               <BadgeCheck className="h-4 w-4 shrink-0 text-amber-500" />
             )}
+            {pro.demo && (
+              <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+                Demo
+              </span>
+            )}
           </div>
           <p className="text-sm font-medium text-amber-700">{pro.profession}</p>
           <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-400">

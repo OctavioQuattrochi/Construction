@@ -110,7 +110,7 @@ export const aboutBio = {
   years: 40,
   // Pilares de la empresa (no de un profesional individual).
   highlights: [
-    "Una red de profesionales verificados a tu disposición.",
+    "Una red de profesionales de la construcción a tu disposición.",
     "Herramientas técnicas gratuitas para planificar y presupuestar.",
     "Información transparente de precios y proveedores.",
     "Enfoque práctico: soluciones reales, no teoría.",

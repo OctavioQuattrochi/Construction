@@ -382,25 +382,27 @@ async function main() {
   // Normalizar autor a la marca de empresa.
   await db.article.updateMany({ data: { author: "Equipo BildAp" } });
 
-  // Professionals
+  // Professionals — datos de ejemplo: se marcan como demo para etiquetarlos en la UI.
   for (const p of professionals) {
+    const data = { ...p, demo: true };
     await db.professional.upsert({
       where: { slug: p.slug },
-      update: p,
-      create: p,
+      update: data,
+      create: data,
     });
   }
-  console.log(`  ✓ ${professionals.length} profesionales`);
+  console.log(`  ✓ ${professionals.length} profesionales (demo)`);
 
-  // Properties
+  // Properties — idem.
   for (const pr of properties) {
+    const data = { ...pr, demo: true };
     await db.property.upsert({
       where: { slug: pr.slug },
-      update: pr,
-      create: pr,
+      update: data,
+      create: data,
     });
   }
-  console.log(`  ✓ ${properties.length} inmuebles`);
+  console.log(`  ✓ ${properties.length} inmuebles (demo)`);
 
   // Homepage editable content
   await db.siteContent.upsert({

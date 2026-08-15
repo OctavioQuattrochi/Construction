@@ -15,7 +15,7 @@ const marquee = [
 
 const guarantees = [
   { icon: ShieldCheck, title: "Respaldo profesional", desc: "Matrícula y firma" },
-  { icon: Clock, title: "40+ años", desc: "de trayectoria real" },
+  { icon: Clock, title: "40+ años", desc: "de experiencia del fundador" },
   { icon: FileCheck2, title: "Informes válidos", desc: "compraventa y seguros" },
   { icon: HandCoins, title: "Cuidamos tu plata", desc: "sin sobrecostos" },
 ];

@@ -10,7 +10,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Profesionales de la construcción",
   description:
-    "Encontrá arquitectos, ingenieros, maestros mayores de obra y empresas de la construcción verificados en la red de BildAp.",
+    "Encontrá arquitectos, ingenieros, maestros mayores de obra y empresas de la construcción en la red de BildAp.",
 };
 
 export const dynamic = "force-dynamic";
@@ -66,7 +66,7 @@ export default async function ProfesionalesPage({
               </h2>
               <p className="mt-2 text-concrete-300">
                 Sumate a la red de {site.brand} y llegá a quienes están por
-                construir en {site.region}. Perfil verificado, contacto directo y
+                construir en {site.region}. Perfil propio, contacto directo y
                 más visibilidad para tus servicios.
               </p>
             </div>

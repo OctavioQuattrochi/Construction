@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Users } from "lucide-react";
+import Link from "next/link";
+import { Users, Info } from "lucide-react";
 import type { Professional } from "@prisma/client";
 import { ProfessionalCard } from "./professional-card";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
@@ -37,8 +38,25 @@ export function ProfessionalsClient({
     window.history.replaceState(null, "", url);
   }
 
+  const demoCount = professionals.filter((p) => p.demo).length;
+
   return (
     <>
+      {demoCount > 0 && (
+        <div className="mb-6 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-500/10 px-4 py-3 text-sm text-ink-700">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+          <p>
+            Estamos sumando profesionales a la red. Los perfiles marcados{" "}
+            <strong>Demo</strong> son de ejemplo y sus datos de contacto no son
+            reales.{" "}
+            <Link href="/contacto" className="font-medium text-amber-700 underline">
+              Sumá tu perfil
+            </Link>
+            .
+          </p>
+        </div>
+      )}
+
       {professions.length > 0 && (
         <div className="mb-8 flex flex-wrap gap-2">
           <Chip active={!active} onClick={() => select("")}>

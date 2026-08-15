@@ -39,7 +39,7 @@ const tools = [
     href: "/profesionales",
     icon: Users,
     title: "Red de profesionales",
-    desc: "Encontrá arquitectos, ingenieros y maestros mayores de obra verificados. Contacto directo.",
+    desc: "Encontrá arquitectos, ingenieros y maestros mayores de obra. Contacto directo.",
     tag: "Comunidad",
     accent: "from-purple-500/20",
   },

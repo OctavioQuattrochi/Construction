@@ -19,7 +19,7 @@ export function Services({ services }: { services: ServiceView[] }) {
       <SectionHeading
         eyebrow="Servicios profesionales"
         title="Todo lo que tu obra necesita, con respaldo técnico"
-        description="Un solo estudio para acompañarte en cada etapa: desde la idea inicial hasta la entrega final de la obra."
+        description="Asesoramiento profesional dentro de BildAp, para acompañarte en cada etapa: desde la idea inicial hasta la entrega final de la obra."
       />
 
       <StaggerGroup className="mt-14 grid gap-6 md:grid-cols-2">
