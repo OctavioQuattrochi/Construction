@@ -45,39 +45,70 @@ export async function getObraAccess(
   return { role, canEdit: role === "editor", canManage: false };
 }
 
-/** Obras que el usuario creó + obras a las que fue invitado. */
+/**
+ * Obras que el usuario creó + obras a las que fue invitado.
+ * Se evitan los `include` anidados (Prisma los resuelve uno por uno): traemos
+ * los rubros y gastos de todas las obras en una sola consulta y agrupamos acá.
+ */
 export async function listObrasFor(user: { id: string; email: string }) {
-  const [own, invited] = await Promise.all([
+  const email = user.email.toLowerCase();
+
+  const [own, memberships] = await Promise.all([
     db.obra.findMany({
       where: { memberId: user.id },
       orderBy: { createdAt: "desc" },
-      include: {
-        rubros: { select: { budgeted: true, progress: true } },
-        expenses: { select: { amount: true } },
-      },
     }),
-    db.obra.findMany({
-      where: { participants: { some: { email: user.email.toLowerCase() } } },
-      orderBy: { createdAt: "desc" },
-      include: {
-        rubros: { select: { budgeted: true, progress: true } },
-        expenses: { select: { amount: true } },
-        participants: {
-          where: { email: user.email.toLowerCase() },
-          select: { role: true },
-        },
-      },
-    }),
+    db.obraMember.findMany({ where: { email }, select: { obraId: true, role: true } }),
   ]);
 
-  return [
-    ...own.map((o) => ({ ...o, shared: false, myRole: "admin" as const })),
-    ...invited.map((o) => ({
+  const invitedIds = memberships.map((m) => m.obraId);
+  const invited = invitedIds.length
+    ? await db.obra.findMany({
+        where: { id: { in: invitedIds } },
+        orderBy: { createdAt: "desc" },
+      })
+    : [];
+
+  const all = [...own, ...invited];
+  const ids = all.map((o) => o.id);
+  const [rubros, expenses] = ids.length
+    ? await Promise.all([
+        db.obraRubro.findMany({
+          where: { obraId: { in: ids } },
+          select: { obraId: true, budgeted: true, progress: true },
+        }),
+        db.obraExpense.findMany({
+          where: { obraId: { in: ids } },
+          select: { obraId: true, amount: true },
+        }),
+      ])
+    : [[], []];
+
+  const roleByObra = new Map(memberships.map((m) => [m.obraId, m.role]));
+  const group = <T extends { obraId: string }>(rows: T[]) => {
+    const map = new Map<string, T[]>();
+    for (const r of rows) {
+      const list = map.get(r.obraId) ?? [];
+      list.push(r);
+      map.set(r.obraId, list);
+    }
+    return map;
+  };
+  const rubrosBy = group(rubros);
+  const expensesBy = group(expenses);
+
+  return all.map((o) => {
+    const isOwn = o.memberId === user.id;
+    return {
       ...o,
-      shared: true,
-      myRole: (o.participants[0]?.role === "editor" ? "editor" : "viewer") as
-        | "editor"
-        | "viewer",
-    })),
-  ];
+      rubros: rubrosBy.get(o.id) ?? [],
+      expenses: expensesBy.get(o.id) ?? [],
+      shared: !isOwn,
+      myRole: isOwn
+        ? ("admin" as const)
+        : roleByObra.get(o.id) === "editor"
+          ? ("editor" as const)
+          : ("viewer" as const),
+    };
+  });
 }

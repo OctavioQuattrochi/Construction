@@ -29,6 +29,7 @@ import { BudgetEvolution } from "@/components/obra/budget-evolution";
 import { ObraProgressRing } from "@/components/obra/obra-progress-ring";
 import { ObraTimeline } from "@/components/obra/obra-timeline";
 import { ObraTabs } from "@/components/obra/obra-tabs";
+import { ObraStatus } from "@/components/obra/obra-status";
 import {
   saveRubro,
   deleteRubro,
@@ -166,9 +167,7 @@ export default async function ObraPage({
                 >
                   <FileText className="h-4 w-4" /> Informe PDF
                 </Link>
-                <span className="rounded-full bg-amber-500 px-3.5 py-1.5 text-sm font-semibold text-ink-950">
-                  {statusLabel[obra.status] ?? obra.status}
-                </span>
+                <ObraStatus obraId={obra.id} status={obra.status} canEdit={canEdit} />
               </div>
             </div>
 

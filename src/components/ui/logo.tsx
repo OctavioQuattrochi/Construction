@@ -9,8 +9,19 @@ export function LogoMark({ className }: { className?: string }) {
       fill="none"
     >
       <rect width="40" height="40" rx="10" fill="#0c0f14" />
+      {/* Borde sutil: separa el ícono cuando el fondo también es oscuro. */}
+      <rect
+        x="0.75"
+        y="0.75"
+        width="38.5"
+        height="38.5"
+        rx="9.25"
+        stroke="#f0a500"
+        strokeOpacity="0.45"
+        strokeWidth="1.5"
+      />
       {/* Building blocks ascending — "build up" */}
-      <rect x="10" y="22" width="6" height="8" rx="1.4" fill="#ffffff" fillOpacity="0.55" />
+      <rect x="10" y="22" width="6" height="8" rx="1.4" fill="#ffffff" fillOpacity="0.7" />
       <rect x="17" y="17" width="6" height="13" rx="1.4" fill="#f0a500" />
       <rect x="24" y="11" width="6" height="19" rx="1.4" fill="#ffab20" />
     </svg>

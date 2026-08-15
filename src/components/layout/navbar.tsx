@@ -49,7 +49,9 @@ export function Navbar({ member = null }: { member?: Member }) {
       >
         <nav className="container-x flex h-16 items-center justify-between gap-4 md:h-[4.5rem]">
           <Link href="/" aria-label={site.brand} className="shrink-0">
-            <Logo />
+            {/* Arriba de todo el navbar es transparente sobre un fondo oscuro:
+                ahí el logo va en versión clara para que se lea. */}
+            <Logo light={!scrolled} />
           </Link>
 
           <div className="hidden items-center gap-0.5 lg:flex">
@@ -65,9 +67,14 @@ export function Navbar({ member = null }: { member?: Member }) {
                   href={item.href}
                   className={cn(
                     "whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200 xl:px-4",
-                    active
-                      ? "bg-ink-50 text-ink-900"
-                      : "text-ink-500 hover:bg-ink-50 hover:text-ink-900"
+                    // Sobre el hero oscuro (navbar transparente) el texto va claro.
+                    scrolled
+                      ? active
+                        ? "bg-ink-50 text-ink-900"
+                        : "text-ink-500 hover:bg-ink-50 hover:text-ink-900"
+                      : active
+                        ? "bg-white/15 text-white"
+                        : "text-concrete-300 hover:bg-white/10 hover:text-white"
                   )}
                 >
                   {item.label}
@@ -81,7 +88,12 @@ export function Navbar({ member = null }: { member?: Member }) {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen((v) => !v)}
-                  className="flex items-center gap-2 rounded-full border border-ink-200 py-1 pl-1 pr-3 transition-colors hover:border-ink-300"
+                  className={cn(
+                    "flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 transition-colors",
+                    scrolled
+                      ? "border-ink-200 hover:border-ink-300"
+                      : "border-white/25 hover:border-white/50"
+                  )}
                 >
                   {member.image ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -91,7 +103,12 @@ export function Navbar({ member = null }: { member?: Member }) {
                       {member.name.charAt(0).toUpperCase()}
                     </span>
                   )}
-                  <span className="max-w-[8rem] truncate text-sm font-medium text-ink-700">
+                  <span
+                    className={cn(
+                      "max-w-[8rem] truncate text-sm font-medium",
+                      scrolled ? "text-ink-700" : "text-white"
+                    )}
+                  >
                     {member.name.split(" ")[0]}
                   </span>
                 </button>
@@ -142,7 +159,10 @@ export function Navbar({ member = null }: { member?: Member }) {
           </div>
 
           <button
-            className="btn-focus -mr-1 rounded-full p-2 text-ink-800 lg:hidden"
+            className={cn(
+              "btn-focus -mr-1 rounded-full p-2 lg:hidden",
+              scrolled ? "text-ink-800" : "text-white"
+            )}
             onClick={() => setOpen((v) => !v)}
             aria-label="Menú"
           >

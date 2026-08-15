@@ -101,6 +101,18 @@ export async function deleteObra(fd: FormData) {
   redirect("/mi-obra");
 }
 
+/** Cambia el estado de la obra (planificación / ejecución / pausada / terminada). */
+export async function setObraStatus(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+  const status = str(fd, "status");
+  if (!["planificacion", "ejecucion", "pausada", "terminada"].includes(status)) return;
+  await db.obra.update({ where: { id: obraId }, data: { status } });
+  revalidatePath(`/mi-obra/${obraId}`);
+  revalidatePath("/mi-obra");
+}
+
 // -------------------------------------------------------------- PRESUPUESTO
 /** Congela el presupuesto actual como línea base (el "original" de la obra). */
 export async function setBaseline(fd: FormData) {
