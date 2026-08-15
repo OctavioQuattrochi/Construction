@@ -129,7 +129,10 @@ export default async function ConocimientoPage({
               </div>
             )}
 
-            <StaggerGroup className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <StaggerGroup
+              replayKey={`${cat}|${search}`}
+              className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            >
               {rest.map((a) => (
                 <StaggerItem key={a.id}>
                   <ArticleCard article={a} />

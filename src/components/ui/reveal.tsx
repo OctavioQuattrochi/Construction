@@ -44,13 +44,21 @@ export function StaggerGroup({
   children,
   className,
   once = true,
+  replayKey,
 }: {
   children: ReactNode;
   className?: string;
   once?: boolean;
+  /**
+   * Para listas que cambian (filtros/búsquedas): pasá un valor que cambie con el
+   * filtro. Sin esto, los items que vuelven a montarse quedan en "hidden"
+   * (invisibles) porque el contenedor ya disparó su animación con once:true.
+   */
+  replayKey?: string | number;
 }) {
   return (
     <motion.div
+      key={replayKey}
       className={className}
       variants={containerVariants}
       initial="hidden"

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Users, Info } from "lucide-react";
+import { Users, Info, X } from "lucide-react";
 import type { Professional } from "@prisma/client";
 import { ProfessionalCard } from "./professional-card";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
@@ -70,10 +70,28 @@ export function ProfessionalsClient({
         </div>
       )}
 
+      <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-ink-500">
+        <span>
+          <strong className="text-ink-900">{filtered.length}</strong> de{" "}
+          {professionals.length} profesional{professionals.length === 1 ? "" : "es"}
+        </span>
+        {active && (
+          <button
+            onClick={() => select("")}
+            className="inline-flex items-center gap-1 rounded-full border border-ink-200 px-3 py-1 text-xs font-medium text-ink-600 hover:border-ink-400 hover:text-ink-900"
+          >
+            <X className="h-3.5 w-3.5" /> Quitar filtro
+          </button>
+        )}
+      </div>
+
       {filtered.length === 0 ? (
         <EmptyState />
       ) : (
-        <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup
+          replayKey={active || "todos"}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {filtered.map((pro) => (
             <StaggerItem key={pro.id}>
               <ProfessionalCard

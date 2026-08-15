@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Building2, Info } from "lucide-react";
+import { Building2, Info, X } from "lucide-react";
 import type { Property } from "@prisma/client";
 import { PropertyCard } from "./property-card";
 import { StaggerGroup, StaggerItem } from "@/components/ui/reveal";
@@ -95,10 +95,33 @@ export function PropertiesClient({
         </div>
       </div>
 
+      {/* Estado de los filtros: deja claro por qué se ven menos resultados. */}
+      <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-ink-500">
+        <span>
+          <strong className="text-ink-900">{filtered.length}</strong> de{" "}
+          {properties.length} inmueble{properties.length === 1 ? "" : "s"}
+        </span>
+        {(op || type) && (
+          <button
+            onClick={() => {
+              setOp("");
+              setType("");
+              sync("", "");
+            }}
+            className="inline-flex items-center gap-1 rounded-full border border-ink-200 px-3 py-1 text-xs font-medium text-ink-600 hover:border-ink-400 hover:text-ink-900"
+          >
+            <X className="h-3.5 w-3.5" /> Quitar filtros
+          </button>
+        )}
+      </div>
+
       {filtered.length === 0 ? (
         <EmptyState />
       ) : (
-        <StaggerGroup className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerGroup
+          replayKey={`${op}|${type}`}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        >
           {filtered.map((p) => (
             <StaggerItem key={p.id}>
               <PropertyCard
