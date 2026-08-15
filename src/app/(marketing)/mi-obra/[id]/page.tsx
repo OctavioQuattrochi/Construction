@@ -28,6 +28,7 @@ import { SubmitButton } from "@/components/ui/loading";
 import { BudgetEvolution } from "@/components/obra/budget-evolution";
 import { ObraProgressRing } from "@/components/obra/obra-progress-ring";
 import { ObraTimeline } from "@/components/obra/obra-timeline";
+import { ObraTabs } from "@/components/obra/obra-tabs";
 import {
   saveRubro,
   deleteRubro,
@@ -48,15 +49,6 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 export const dynamic = "force-dynamic";
-
-const TABS = [
-  { key: "resumen", label: "Resumen", icon: LayoutDashboard },
-  { key: "avance", label: "Avance", icon: TrendingUp },
-  { key: "dinero", label: "Dinero", icon: Wallet },
-  { key: "materiales", label: "Materiales", icon: Package },
-  { key: "libro", label: "Libro de obra", icon: BookOpen },
-  { key: "gente", label: "Participantes", icon: Users },
-];
 
 const statusLabel: Record<string, string> = {
   planificacion: "En planificación",
@@ -81,29 +73,31 @@ export default async function ObraPage({
   if (!member) redirect("/ingresar");
   const { id } = await params;
   const { tab } = await searchParams;
-  const active = TABS.find((t) => t.key === tab)?.key ?? "resumen";
 
-  // Cada relación es una consulta aparte: cargamos sólo lo que la pestaña usa.
-  // rubros y expenses siempre (alimentan las métricas del encabezado).
-  const obra = await db.obra.findUnique({
-    where: { id },
-    include: {
-      rubros: { orderBy: { order: "asc" } },
-      expenses: { orderBy: { date: "desc" } },
-      ...(active === "materiales"
-        ? { materials: { orderBy: { createdAt: "desc" as const } } }
-        : {}),
-      ...(active === "libro"
-        ? { logs: { orderBy: { date: "desc" as const } } }
-        : {}),
-      ...(active === "gente"
-        ? { participants: { orderBy: { createdAt: "asc" as const } } }
-        : {}),
-      ...(active === "dinero"
-        ? { adjustments: { orderBy: { date: "desc" as const } } }
-        : {}),
-    },
-  });
+  // Todo en paralelo: Prisma resuelve los `include` uno tras otro, así que
+  // pedir cada relación por separado con Promise.all es bastante más rápido.
+  const [obraRow, rubros, expenses, materials, logs, participants, adjustments] =
+    await Promise.all([
+      db.obra.findUnique({ where: { id } }),
+      db.obraRubro.findMany({ where: { obraId: id }, orderBy: { order: "asc" } }),
+      db.obraExpense.findMany({ where: { obraId: id }, orderBy: { date: "desc" } }),
+      db.obraMaterial.findMany({
+        where: { obraId: id },
+        orderBy: { createdAt: "desc" },
+      }),
+      db.obraLog.findMany({ where: { obraId: id }, orderBy: { date: "desc" } }),
+      db.obraMember.findMany({
+        where: { obraId: id },
+        orderBy: { createdAt: "asc" },
+      }),
+      db.obraAdjustment.findMany({
+        where: { obraId: id },
+        orderBy: { date: "desc" },
+      }),
+    ]);
+  const obra = obraRow
+    ? { ...obraRow, rubros, expenses, materials, logs, participants, adjustments }
+    : null;
   if (!obra) notFound();
   const access = await getObraAccess(obra.id, member, obra.memberId);
   if (!access) notFound();
@@ -128,8 +122,6 @@ export default async function ObraPage({
   const gastoPct = presupuesto > 0 ? Math.round((gastado / presupuesto) * 100) : 0;
   // Señal temprana: se gastó bastante más de lo que se avanzó.
   const alerta = presupuesto > 0 && gastoPct - avance >= 15;
-
-  const href = (t: string) => `/mi-obra/${obra.id}?tab=${t}`;
 
   return (
     <article className="pb-24 pt-28 md:pt-32">
@@ -209,27 +201,11 @@ export default async function ObraPage({
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="thin-scrollbar mt-6 flex gap-2 overflow-x-auto pb-2">
-          {TABS.map((t) => (
-            <Link
-              key={t.key}
-              href={href(t.key)}
-              className={cn(
-                "flex shrink-0 items-center gap-2 rounded-2xl border px-4 py-2.5 text-sm font-medium transition-colors",
-                active === t.key
-                  ? "border-ink-900 bg-ink-900 text-white"
-                  : "border-ink-200 bg-white text-ink-600 hover:border-ink-300"
-              )}
-            >
-              <t.icon className={cn("h-4 w-4", active === t.key && "text-amber-400")} />
-              {t.label}
-            </Link>
-          ))}
-        </div>
-
-        {/* ---------------- RESUMEN ---------------- */}
-        {active === "resumen" && (
+        <ObraTabs
+          obraId={obra.id}
+          initial={tab}
+          panels={{
+          resumen: (
           <div className="mt-6 space-y-6">
             {/* Anillo de avance + métricas */}
             <div className="flex flex-col items-center gap-8 rounded-3xl border border-ink-100 bg-white p-8 shadow-soft md:flex-row md:items-center md:justify-center md:gap-14">
@@ -279,7 +255,7 @@ export default async function ObraPage({
             )}
 
             <div className="grid gap-4 md:grid-cols-2">
-              <Panel title="Avance por etapa" href={href("avance")}>
+              <Panel title="Avance por etapa">
                 {obra.rubros.slice(0, 6).map((r) => (
                   <div key={r.id} className="py-2">
                     <div className="flex items-center justify-between text-sm">
@@ -299,7 +275,7 @@ export default async function ObraPage({
                 ))}
               </Panel>
 
-              <Panel title="Últimos movimientos" href={href("dinero")}>
+              <Panel title="Últimos movimientos">
                 {obra.expenses.length === 0 ? (
                   <p className="py-3 text-sm text-ink-400">Sin gastos registrados.</p>
                 ) : (
@@ -321,10 +297,9 @@ export default async function ObraPage({
               </Panel>
             </div>
           </div>
-        )}
+          ),
 
-        {/* ---------------- AVANCE ---------------- */}
-        {active === "avance" && (
+          avance: (
           <div className="mt-6 space-y-3">
             {/* Atajo: cargar un solo número y repartirlo con los % típicos de obra */}
             {canEdit && (
@@ -457,10 +432,9 @@ export default async function ObraPage({
             </form>
             )}
           </div>
-        )}
+          ),
 
-        {/* ---------------- DINERO ---------------- */}
-        {active === "dinero" && (
+          dinero: (
           <div className="mt-6 space-y-6">
             <BudgetEvolution
               obraId={obra.id}
@@ -547,10 +521,9 @@ export default async function ObraPage({
             )}
           </div>
           </div>
-        )}
+          ),
 
-        {/* ---------------- MATERIALES ---------------- */}
-        {active === "materiales" && (
+          materiales: (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <div>
               {obra.materials.length === 0 ? (
@@ -651,10 +624,9 @@ export default async function ObraPage({
             </form>
             )}
           </div>
-        )}
+          ),
 
-        {/* ---------------- LIBRO DE OBRA ---------------- */}
-        {active === "libro" && (
+          libro: (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <div className="space-y-4">
               {/* Historia de la obra: lo que el propietario quiere ver */}
@@ -734,10 +706,9 @@ export default async function ObraPage({
             </form>
             )}
           </div>
-        )}
+          ),
 
-        {/* ---------------- PARTICIPANTES ---------------- */}
-        {active === "gente" && (
+          gente: (
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <div className="space-y-3">
               {/* Creador */}
@@ -832,7 +803,9 @@ export default async function ObraPage({
               </form>
             )}
           </div>
-        )}
+          ),
+        }}
+        />
       </div>
     </article>
   );
@@ -896,20 +869,15 @@ function Stat({
 
 function Panel({
   title,
-  href,
   children,
 }: {
   title: string;
-  href: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-ink-100 bg-white p-5 shadow-soft">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2">
         <h3 className="font-display font-semibold text-ink-900">{title}</h3>
-        <Link href={href} className="text-xs font-medium text-amber-600 hover:underline">
-          Ver todo
-        </Link>
       </div>
       <div className="divide-y divide-ink-50">{children}</div>
     </div>
