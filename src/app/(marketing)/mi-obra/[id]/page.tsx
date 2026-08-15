@@ -14,9 +14,13 @@ import {
   AlertTriangle,
   HardHat,
   Sparkles,
+  Users,
+  Eye,
+  Mail,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
+import { getObraAccess } from "@/lib/obra-access";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Field, inputClass, ConfirmSubmit } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/ui/loading";
@@ -31,6 +35,8 @@ import {
   deleteExpense,
   saveLog,
   deleteLog,
+  inviteToObra,
+  removeFromObra,
 } from "../actions";
 
 export const metadata: Metadata = {
@@ -45,6 +51,7 @@ const TABS = [
   { key: "dinero", label: "Dinero", icon: Wallet },
   { key: "materiales", label: "Materiales", icon: Package },
   { key: "libro", label: "Libro de obra", icon: BookOpen },
+  { key: "gente", label: "Participantes", icon: Users },
 ];
 
 const statusLabel: Record<string, string> = {
@@ -79,9 +86,13 @@ export default async function ObraPage({
       materials: { orderBy: { createdAt: "desc" } },
       expenses: { orderBy: { date: "desc" }, include: { rubro: true } },
       logs: { orderBy: { date: "desc" } },
+      participants: { orderBy: { createdAt: "asc" } },
     },
   });
-  if (!obra || obra.memberId !== member.id) notFound();
+  if (!obra) notFound();
+  const access = await getObraAccess(obra.id, member);
+  if (!access) notFound();
+  const canEdit = access.canEdit;
 
   // --- métricas ---
   const presupuesto = obra.rubros.reduce((s, r) => s + r.budgeted, 0);
@@ -160,6 +171,17 @@ export default async function ObraPage({
             </div>
           </div>
         </div>
+
+        {/* Aviso de sólo lectura para el invitado que mira */}
+        {!canEdit && (
+          <div className="mt-4 flex items-start gap-2 rounded-2xl border border-ink-200 bg-concrete-50 px-4 py-3 text-sm text-ink-600">
+            <Eye className="mt-0.5 h-4 w-4 shrink-0 text-ink-400" />
+            <p>
+              Estás viendo esta obra como invitado. El avance y los gastos los
+              carga quien la administra — vos podés seguirla en todo momento.
+            </p>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="thin-scrollbar mt-6 flex gap-2 overflow-x-auto pb-2">
@@ -258,6 +280,7 @@ export default async function ObraPage({
         {active === "avance" && (
           <div className="mt-6 space-y-3">
             {/* Atajo: cargar un solo número y repartirlo con los % típicos de obra */}
+            {canEdit && (
             <form
               action={distributeBudget}
               className="flex flex-wrap items-end gap-3 rounded-2xl border border-amber-200 bg-amber-500/10 p-4"
@@ -284,6 +307,7 @@ export default async function ObraPage({
                 <Sparkles className="h-4 w-4 text-amber-400" /> Repartir por etapa
               </SubmitButton>
             </form>
+            )}
 
             {obra.rubros.map((r) => (
               <form
@@ -348,6 +372,7 @@ export default async function ObraPage({
               </form>
             ))}
 
+            {canEdit && (
             <form
               action={saveRubro}
               className="flex flex-wrap items-end gap-3 rounded-2xl border border-dashed border-ink-200 bg-white p-4"
@@ -370,6 +395,7 @@ export default async function ObraPage({
                 <Plus className="h-4 w-4" /> Agregar
               </SubmitButton>
             </form>
+            )}
           </div>
         )}
 
@@ -413,6 +439,7 @@ export default async function ObraPage({
               )}
             </div>
 
+            {canEdit && (
             <form
               action={saveExpense}
               className="h-fit space-y-4 rounded-3xl border border-ink-100 bg-white p-6 shadow-soft lg:sticky lg:top-24"
@@ -445,6 +472,7 @@ export default async function ObraPage({
                 Registrar
               </SubmitButton>
             </form>
+            )}
           </div>
         )}
 
@@ -513,6 +541,7 @@ export default async function ObraPage({
               )}
             </div>
 
+            {canEdit && (
             <form
               action={saveMaterial}
               className="h-fit space-y-4 rounded-3xl border border-ink-100 bg-white p-6 shadow-soft lg:sticky lg:top-24"
@@ -547,6 +576,7 @@ export default async function ObraPage({
                 .
               </p>
             </form>
+            )}
           </div>
         )}
 
@@ -591,6 +621,7 @@ export default async function ObraPage({
               )}
             </div>
 
+            {canEdit && (
             <form
               action={saveLog}
               className="h-fit space-y-4 rounded-3xl border border-ink-100 bg-white p-6 shadow-soft lg:sticky lg:top-24"
@@ -616,6 +647,105 @@ export default async function ObraPage({
                 Registrar
               </SubmitButton>
             </form>
+            )}
+          </div>
+        )}
+
+        {/* ---------------- PARTICIPANTES ---------------- */}
+        {active === "gente" && (
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+            <div className="space-y-3">
+              {/* Creador */}
+              <div className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 shadow-soft">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-900 text-sm font-bold text-amber-400">
+                  {member.name.slice(0, 1).toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-ink-900">
+                    {access.role === "admin" ? `${member.name} (vos)` : "Creador de la obra"}
+                  </p>
+                  <p className="text-xs text-ink-400">Administra la obra</p>
+                </div>
+                <span className="rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700">
+                  Administrador
+                </span>
+              </div>
+
+              {obra.participants.map((p) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 shadow-soft"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink-100 text-ink-500">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-ink-900">
+                      {p.name || p.email}
+                    </p>
+                    {p.name && <p className="truncate text-xs text-ink-400">{p.email}</p>}
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded-full px-3 py-1 text-xs font-semibold",
+                      p.role === "editor"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-ink-100 text-ink-600"
+                    )}
+                  >
+                    {p.role === "editor" ? "Carga avance" : "Sólo mira"}
+                  </span>
+                  {access.canManage && (
+                    <form action={removeFromObra}>
+                      <input type="hidden" name="obraId" value={obra.id} />
+                      <input type="hidden" name="id" value={p.id} />
+                      <ConfirmSubmit message={`¿Quitar a ${p.name || p.email} de la obra?`}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </ConfirmSubmit>
+                    </form>
+                  )}
+                </div>
+              ))}
+
+              {obra.participants.length === 0 && (
+                <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-400">
+                  Todavía no invitaste a nadie a esta obra.
+                </p>
+              )}
+            </div>
+
+            {access.canManage && (
+              <form
+                action={inviteToObra}
+                className="h-fit space-y-4 rounded-3xl border border-ink-100 bg-white p-6 shadow-soft lg:sticky lg:top-24"
+              >
+                <input type="hidden" name="obraId" value={obra.id} />
+                <h2 className="font-display font-semibold text-ink-900">Invitar a la obra</h2>
+                <p className="text-sm text-ink-500">
+                  Compartila con el profesional a cargo o con el propietario. Si
+                  todavía no tiene cuenta, al registrarse con ese email entra
+                  automáticamente.
+                </p>
+                <Field label="Email">
+                  <input name="email" type="email" required placeholder="arquitecto@estudio.com" className={inputClass} />
+                </Field>
+                <Field label="Nombre" hint="Opcional, para identificarlo.">
+                  <input name="name" placeholder="Arq. Juan Pérez" className={inputClass} />
+                </Field>
+                <Field label="¿Qué puede hacer?">
+                  <select name="role" className={inputClass} defaultValue="viewer">
+                    <option value="viewer">Sólo mirar (propietario / cliente)</option>
+                    <option value="editor">Cargar avance y gastos (profesional)</option>
+                  </select>
+                </Field>
+                <SubmitButton
+                  pendingText="Invitando…"
+                  className="w-full rounded-xl bg-amber-500 py-3 font-semibold text-ink-950 hover:bg-amber-600"
+                >
+                  Invitar
+                </SubmitButton>
+              </form>
+            )}
           </div>
         )}
       </div>

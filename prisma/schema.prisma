@@ -143,10 +143,26 @@ model Obra {
   materials    ObraMaterial[]
   expenses     ObraExpense[]
   logs         ObraLog[]
+  participants ObraMember[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   @@index([memberId])
+}
+
+// Participante invitado a una obra. Se invita por email: si todavía no tiene
+// cuenta, al registrarse con ese email obtiene acceso automáticamente.
+model ObraMember {
+  id        String   @id @default(cuid())
+  obraId    String
+  obra      Obra     @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  email     String // en minúsculas
+  name      String? // nombre de referencia que carga quien invita
+  role      String   @default("viewer") // editor (carga avance) | viewer (sólo mira)
+  createdAt DateTime @default(now())
+
+  @@unique([obraId, email])
+  @@index([email])
 }
 
 // Rubro / etapa de obra con su presupuesto y avance declarado.

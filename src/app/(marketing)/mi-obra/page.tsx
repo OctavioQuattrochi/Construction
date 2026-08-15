@@ -5,8 +5,8 @@ import { HardHat, ArrowRight, MapPin, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Field, inputClass } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/ui/loading";
-import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
+import { listObrasFor } from "@/lib/obra-access";
 import { formatCurrency } from "@/lib/utils";
 import { createObra } from "./actions";
 
@@ -28,14 +28,8 @@ export default async function MiObraPage() {
   const member = await getMemberSession();
   if (!member) redirect("/ingresar");
 
-  const obras = await db.obra.findMany({
-    where: { memberId: member.id },
-    orderBy: { createdAt: "desc" },
-    include: {
-      rubros: { select: { budgeted: true, progress: true } },
-      expenses: { select: { amount: true } },
-    },
-  });
+  // Incluye las obras propias y aquellas a las que fue invitado.
+  const obras = await listObrasFor(member);
 
   return (
     <>
@@ -91,9 +85,16 @@ export default async function MiObraPage() {
                             </p>
                           )}
                         </div>
-                        <span className="shrink-0 rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700">
-                          {statusLabel[o.status] ?? o.status}
-                        </span>
+                        <div className="flex shrink-0 flex-col items-end gap-1.5">
+                          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700">
+                            {statusLabel[o.status] ?? o.status}
+                          </span>
+                          {o.shared && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-0.5 text-[11px] font-medium text-ink-600">
+                              {o.myRole === "editor" ? "Compartida · cargás avance" : "Compartida · sólo mirás"}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       <div className="mt-4 grid grid-cols-3 gap-3 border-t border-ink-100 pt-4 text-sm">

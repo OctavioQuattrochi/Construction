@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
+import { getObraAccess } from "@/lib/obra-access";
 
 async function requireMember() {
   const session = await getMemberSession();
@@ -11,11 +12,21 @@ async function requireMember() {
   return session;
 }
 
-/** Verifica que la obra sea del usuario logueado. */
-async function ownObra(obraId: string, memberId: string) {
-  const obra = await db.obra.findUnique({ where: { id: obraId } });
-  if (!obra || obra.memberId !== memberId) redirect("/mi-obra");
-  return obra;
+/**
+ * Verifica que el usuario pueda EDITAR la obra (creador o invitado como editor).
+ * Los "viewer" no pueden ejecutar ninguna de estas acciones.
+ */
+async function ownObra(
+  obraId: string,
+  memberId: string,
+  email?: string
+) {
+  const access = await getObraAccess(obraId, {
+    id: memberId,
+    email: email ?? "",
+  });
+  if (!access?.canEdit) redirect("/mi-obra");
+  return access;
 }
 
 const str = (fd: FormData, k: string) => (fd.get(k)?.toString() ?? "").trim();
@@ -65,7 +76,7 @@ export async function createObra(fd: FormData) {
 export async function updateObra(fd: FormData) {
   const m = await requireMember();
   const id = str(fd, "id");
-  await ownObra(id, m.id);
+  await ownObra(id, m.id, m.email);
   await db.obra.update({
     where: { id },
     data: {
@@ -82,17 +93,53 @@ export async function updateObra(fd: FormData) {
 export async function deleteObra(fd: FormData) {
   const m = await requireMember();
   const id = str(fd, "id");
-  await ownObra(id, m.id);
+  // Borrar la obra es sólo del creador, no de un editor invitado.
+  await manageObra(id, m.id, m.email);
   await db.obra.delete({ where: { id } });
   revalidatePath("/mi-obra");
   redirect("/mi-obra");
+}
+
+// ----------------------------------------------------------- PARTICIPANTES
+/** Sólo el creador puede administrar la gente invitada. */
+async function manageObra(obraId: string, memberId: string, email: string) {
+  const access = await getObraAccess(obraId, { id: memberId, email });
+  if (!access?.canManage) redirect(`/mi-obra/${obraId}`);
+  return access;
+}
+
+export async function inviteToObra(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await manageObra(obraId, m.id, m.email);
+
+  const email = str(fd, "email").toLowerCase();
+  if (!email || !email.includes("@")) return;
+  // No invitarse a uno mismo.
+  if (email === m.email.toLowerCase()) return;
+
+  const role = str(fd, "role") === "editor" ? "editor" : "viewer";
+  await db.obraMember.upsert({
+    where: { obraId_email: { obraId, email } },
+    update: { role, name: str(fd, "name") || null },
+    create: { obraId, email, role, name: str(fd, "name") || null },
+  });
+  revalidatePath(`/mi-obra/${obraId}`);
+}
+
+export async function removeFromObra(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await manageObra(obraId, m.id, m.email);
+  await db.obraMember.delete({ where: { id: str(fd, "id") } });
+  revalidatePath(`/mi-obra/${obraId}`);
 }
 
 // ------------------------------------------------------------------ RUBROS
 export async function saveRubro(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   const id = str(fd, "id");
   const data = {
     name: str(fd, "name"),
@@ -125,7 +172,7 @@ const BUDGET_SHARES: Record<string, number> = {
 export async function distributeBudget(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   const total = num(fd, "total");
   if (total <= 0) return;
 
@@ -150,7 +197,7 @@ export async function distributeBudget(fd: FormData) {
 export async function deleteRubro(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraRubro.delete({ where: { id: str(fd, "id") } });
   revalidatePath(`/mi-obra/${obraId}`);
 }
@@ -159,7 +206,7 @@ export async function deleteRubro(fd: FormData) {
 export async function saveMaterial(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraMaterial.create({
     data: {
       obraId,
@@ -177,7 +224,7 @@ export async function saveMaterial(fd: FormData) {
 export async function setMaterialStatus(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraMaterial.update({
     where: { id: str(fd, "id") },
     data: { status: str(fd, "status") },
@@ -188,7 +235,7 @@ export async function setMaterialStatus(fd: FormData) {
 export async function deleteMaterial(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraMaterial.delete({ where: { id: str(fd, "id") } });
   revalidatePath(`/mi-obra/${obraId}`);
 }
@@ -197,7 +244,7 @@ export async function deleteMaterial(fd: FormData) {
 export async function saveExpense(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraExpense.create({
     data: {
       obraId,
@@ -213,7 +260,7 @@ export async function saveExpense(fd: FormData) {
 export async function deleteExpense(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraExpense.delete({ where: { id: str(fd, "id") } });
   revalidatePath(`/mi-obra/${obraId}`);
 }
@@ -222,7 +269,7 @@ export async function deleteExpense(fd: FormData) {
 export async function saveLog(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraLog.create({
     data: {
       obraId,
@@ -238,7 +285,7 @@ export async function saveLog(fd: FormData) {
 export async function deleteLog(fd: FormData) {
   const m = await requireMember();
   const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id);
+  await ownObra(obraId, m.id, m.email);
   await db.obraLog.delete({ where: { id: str(fd, "id") } });
   revalidatePath(`/mi-obra/${obraId}`);
 }
