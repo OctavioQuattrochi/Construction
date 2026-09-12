@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Building2, Check, Quote } from "lucide-react";
+import { Building2, Check, Compass, Quote } from "lucide-react";
 import { Section } from "@/components/ui/section";
 import { Reveal } from "@/components/ui/reveal";
 import { aboutBio } from "@/lib/content";
@@ -39,10 +39,12 @@ export function About() {
             {/* floating pillars badge */}
             <div className="absolute -right-4 -top-4 flex h-24 w-24 flex-col items-center justify-center rounded-3xl bg-ink-900 text-white shadow-elevated md:h-28 md:w-28">
               <span className="font-display text-3xl font-bold text-amber-400 md:text-4xl">
-                3
+                {aboutBio.years}+
               </span>
               <span className="text-center text-[0.58rem] uppercase tracking-widest text-concrete-400">
-                pilares
+                años de
+                <br />
+                experiencia
               </span>
             </div>
           </div>
@@ -110,9 +112,30 @@ export function About() {
                 piensa antes de empezar.”
               </blockquote>
               <figcaption className="mt-3 text-sm font-medium text-ink-500">
-                — {site.company}
+                — {aboutBio.founder.name}
               </figcaption>
             </figure>
+          </Reveal>
+
+          {/* Respaldo profesional: la experiencia del fundador da credibilidad,
+              pero la plataforma no depende de una sola persona. */}
+          <Reveal delay={0.3}>
+            <div className="mt-6 flex flex-col gap-4 rounded-2xl border border-ink-100 bg-white p-6 shadow-soft sm:flex-row sm:items-start">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-ink-900">
+                <Compass className="h-7 w-7 text-amber-400" />
+              </div>
+              <div>
+                <p className="font-display font-semibold text-ink-900">
+                  {aboutBio.founder.name}
+                </p>
+                <p className="text-sm font-medium text-amber-600">
+                  {aboutBio.founder.role}
+                </p>
+                <p className="mt-2.5 text-[0.95rem] leading-relaxed text-ink-500">
+                  {aboutBio.founder.blurb}
+                </p>
+              </div>
+            </div>
           </Reveal>
         </div>
       </div>

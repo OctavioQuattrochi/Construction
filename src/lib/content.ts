@@ -109,6 +109,17 @@ export const faqs = [
 
 export const aboutBio = {
   years: 40,
+  /**
+   * El fundador aporta la credibilidad; la plataforma aporta el valor. Por eso
+   * aparece como respaldo profesional y no como protagonista: BildAp tiene que
+   * poder existir con más profesionales además de él.
+   */
+  founder: {
+    name: "Juan Carlos Quattrochi",
+    role: "Arquitecto · Fundador de BildAp",
+    blurb:
+      "Más de 40 años proyectando, dirigiendo y peritando obras en Córdoba. Esa experiencia es la que define el criterio técnico de la plataforma: qué se recomienda, qué se advierte y qué no se afirma sin estar seguro.",
+  },
   // Pilares de la empresa (no de un profesional individual).
   highlights: [
     "Una red de profesionales de la construcción a tu disposición.",

@@ -8,7 +8,7 @@ import { TrustBar } from "@/components/sections/trust-bar";
 import { Partners } from "@/components/sections/partners";
 import { News } from "@/components/sections/news";
 import { getServices } from "@/lib/queries";
-import { faqs } from "@/lib/content";
+import { faqs, aboutBio } from "@/lib/content";
 import { site } from "@/lib/site";
 
 export default async function HomePage() {
@@ -28,6 +28,11 @@ export default async function HomePage() {
         email: site.email,
         logo: `${site.url}/icon.svg`,
         areaServed: `${site.region}, ${site.country}`,
+        founder: {
+          "@type": "Person",
+          name: aboutBio.founder.name,
+          jobTitle: "Arquitecto",
+        },
         address: {
           "@type": "PostalAddress",
           addressLocality: site.region,
