@@ -77,10 +77,16 @@ export function Field({
 }) {
   return (
     <div className={full ? "sm:col-span-2" : undefined}>
-      <label className="mb-1.5 block text-sm font-medium text-ink-700">
-        {label}
+      {/* El campo va DENTRO del <label>: así queda asociado sin tener que
+          repartir ids por todo el formulario. Sin esto el lector de pantalla
+          no anuncia la etiqueta y tocarla no enfoca el campo (importante en
+          el celular, que es donde se carga la obra). */}
+      <label className="block">
+        <span className="mb-1.5 block text-sm font-medium text-ink-700">
+          {label}
+        </span>
+        {children}
       </label>
-      {children}
       {hint && <p className="mt-1 text-xs text-ink-400">{hint}</p>}
     </div>
   );
