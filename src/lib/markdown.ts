@@ -66,6 +66,46 @@ export function markdownToHtml(md: string): string {
       continue;
     }
 
+    // Tabla: una fila de encabezado seguida de la línea separadora |---|---|
+    if (
+      line.trim().startsWith("|") &&
+      i + 1 < lines.length &&
+      /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])
+    ) {
+      const cells = (row: string) =>
+        row
+          .trim()
+          .replace(/^\||\|$/g, "")
+          .split("|")
+          .map((c) => c.trim());
+
+      const head = cells(line);
+      i += 2; // saltear encabezado y separador
+      const body: string[][] = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        body.push(cells(lines[i]));
+        i++;
+      }
+
+      const thead = `<thead><tr>${head
+        .map((c) => `<th>${inline(c)}</th>`)
+        .join("")}</tr></thead>`;
+      const tbody = `<tbody>${body
+        .map(
+          (r) =>
+            `<tr>${head
+              .map((_, n) => `<td>${inline(r[n] ?? "")}</td>`)
+              .join("")}</tr>`
+        )
+        .join("")}</tbody>`;
+      // El contenedor con scroll propio evita que una tabla ancha desborde
+      // la página en el celular.
+      html.push(
+        `<div class="md-table-wrap"><table class="md-table">${thead}${tbody}</table></div>`
+      );
+      continue;
+    }
+
     // Unordered list
     if (/^[-*]\s+/.test(line)) {
       const buf: string[] = [];
