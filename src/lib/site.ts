@@ -1,5 +1,43 @@
 // Central site configuration — single source of truth for brand + contact info.
 
+/** Dominio público canónico. Vive acá porque no es un secreto y no cambia. */
+export const PRODUCTION_URL = "https://bildap.com.ar";
+
+/**
+ * URL base del sitio, en orden de prioridad:
+ *  1. NEXT_PUBLIC_SITE_URL (lo que se configura en Netlify)
+ *  2. el dominio de producción, si estamos en un build de producción
+ *  3. localhost, para desarrollo
+ *
+ * El paso 2 evita el peor escenario: que la variable falte en producción y los
+ * canonical/OG del sitio terminen apuntando a localhost.
+ */
+function siteUrl(): string {
+  const isProd = process.env.NODE_ENV === "production";
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+
+  if (fromEnv) {
+    // Las URLs *.netlify.app son del deploy, no el dominio público: si los
+    // canonical/OG apuntaran ahí, el posicionamiento se repartiría entre dos
+    // dominios y las previews competirían con producción como contenido
+    // duplicado. En un build de producción siempre gana el dominio canónico.
+    // Si el valor no es una URL válida (típico: olvidarse el https://) no
+    // rompemos el build: se ignora y se usa el dominio canónico.
+    let host: string | null = null;
+    try {
+      host = new URL(fromEnv).hostname;
+    } catch {
+      host = null;
+    }
+    if (host) {
+      const isDeployUrl = /\.netlify\.app$/i.test(host);
+      if (!(isProd && isDeployUrl)) return fromEnv;
+    }
+  }
+
+  return isProd ? PRODUCTION_URL : "http://localhost:3000";
+}
+
 export const site = {
   name: "BildAp",
   brand: "BildAp",
@@ -12,7 +50,7 @@ export const site = {
   location: "Córdoba, Argentina",
   region: "Córdoba",
   country: "Argentina",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  url: siteUrl(),
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "hola@bildap.com.ar",
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP || "5493511234567",
   get whatsappUrl() {
