@@ -52,7 +52,7 @@ const professionals = [
     bio: "Maestra mayor de obra con amplia trayectoria en dirección y ejecución. Coordinación de gremios y control de avance de obra.",
     location: "Río Cuarto",
     whatsapp: "5493514444444",
-    email: "laura.mmo@gmail.com",
+    email: "laura.mmo@ejemplo.com.ar",
     specialties: "Dirección de obra|Coordinación de gremios|Presupuestos",
     featured: false,
     order: 4,

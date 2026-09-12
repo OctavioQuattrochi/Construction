@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticate, createSession } from "@/lib/auth";
+import { checkRate } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -10,6 +11,15 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Anti fuerza-bruta del panel: 8 intentos por minuto por IP.
+  const rate = checkRate(req, "admin-login", 8, 60 * 1000);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Esperá un momento." },
+      { status: 429, headers: { "Retry-After": String(rate.retryAfter) } }
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
