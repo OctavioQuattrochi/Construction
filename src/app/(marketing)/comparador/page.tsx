@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { ComparatorClient } from "@/components/comparator/comparator-client";
 import { PriceIndexSection } from "@/components/comparator/price-index-section";
-import { listProviderMeta } from "@/lib/providers/registry";
 import { Dot } from "@/components/ui/badge";
 
 export const metadata: Metadata = {
@@ -12,8 +11,6 @@ export const metadata: Metadata = {
 };
 
 export default function ComparadorPage() {
-  const providers = listProviderMeta();
-
   return (
     <>
       <PageHeader
@@ -27,21 +24,13 @@ export default function ComparadorPage() {
         }
         description="Traemos precios en vivo desde los sitios de varios proveedores y valores de referencia del resto. Compará precio, presentación y disponibilidad antes de comprar."
       >
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-concrete-400">Proveedores integrados:</span>
-          {providers.map((p) => (
-            <span
-              key={p.id}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-concrete-200"
-            >
-              <span
-                className="h-2 w-2 rounded-full"
-                style={{ backgroundColor: p.logoColor }}
-              />
-              {p.name}
-            </span>
-          ))}
-        </div>
+        {/* El comparador no es un directorio de proveedores: el comercio se
+            descubre dentro del resultado del producto que se busca. Acá sólo
+            se comunica el alcance, sin enumerarlos. */}
+        <p className="text-sm text-concrete-400">
+          Buscá un material y compará precio, presentación y disponibilidad
+          entre corralones y ferreterías de Córdoba y Argentina.
+        </p>
       </PageHeader>
 
       <section className="container-x -mt-8 pb-24">
