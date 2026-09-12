@@ -10,6 +10,7 @@ import {
   MessageCircle,
   Phone,
   Building2,
+  Info,
 } from "lucide-react";
 import { getPropertyBySlug, getSavedRefIds } from "@/lib/queries";
 import { getMemberSession } from "@/lib/member-auth";
@@ -28,6 +29,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: property.title,
     description: property.description.slice(0, 155),
+    // Los avisos de ejemplo se muestran etiquetados en la web, pero no se
+    // ofrecen a los buscadores: serían fichas inventadas indexadas como reales.
+    ...(property.demo ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: property.title,
       images: property.coverImage ? [property.coverImage] : undefined,
@@ -68,6 +72,23 @@ export default async function PropertyPage({ params }: Props) {
         >
           <ArrowLeft className="h-4 w-4" /> Volver a inmuebles
         </Link>
+
+        {/* Quien llega por un enlace directo tiene que saber que el aviso es
+            de muestra: en el listado se avisa, pero acá no se avisaba y se ve
+            un precio y un WhatsApp como si fueran reales. */}
+        {property.demo && (
+          <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <p className="text-sm leading-relaxed text-ink-700">
+              <strong className="font-semibold text-ink-900">
+                Aviso de ejemplo.
+              </strong>{" "}
+              Esta publicación es de muestra: sirve para ilustrar cómo se ve un
+              inmueble en BildAp. Los datos de contacto y el precio no
+              corresponden a una propiedad real.
+            </p>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
           {/* Gallery + description */}

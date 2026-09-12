@@ -32,8 +32,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         where: { published: true },
         select: { slug: true, updatedAt: true },
       }),
+      // Sólo avisos reales: pedirle a Google que indexe fichas de ejemplo
+      // sería publicar datos inventados. Cuando se cargan inmuebles reales
+      // (demo: false) entran solos.
       db.property.findMany({
-        where: { published: true },
+        where: { published: true, demo: false },
         select: { slug: true, updatedAt: true },
       }),
     ]);
