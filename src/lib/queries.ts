@@ -204,28 +204,50 @@ export async function getSavedCalculations(memberId: string) {
   }
 }
 
-export async function getRelatedArticles(articleId: string, categoryId: string | null) {
+// Tarjetas: sin el cuerpo del artículo.
+const cardSelect = {
+  id: true,
+  slug: true,
+  title: true,
+  excerpt: true,
+  coverImage: true,
+  readMinutes: true,
+  createdAt: true,
+  category: { select: { name: true, slug: true, color: true } },
+} as const;
+
+/**
+ * Artículos sugeridos al pie. Primero los de la misma categoría; si no alcanzan
+ * para llenar las 3 tarjetas, se completa con los más recientes de otras.
+ * Sin esto, un artículo que es el único de su categoría queda sin ninguna
+ * lectura sugerida: un callejón sin salida para el lector y para el buscador.
+ */
+export async function getRelatedArticles(
+  articleId: string,
+  categoryId: string | null
+) {
+  const TAKE = 3;
   try {
-    return await db.article.findMany({
-      where: {
-        published: true,
-        id: { not: articleId },
-        ...(categoryId ? { categoryId } : {}),
-      },
-      // Tarjetas: sin el cuerpo del artículo.
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        excerpt: true,
-        coverImage: true,
-        readMinutes: true,
-        createdAt: true,
-        category: { select: { name: true, slug: true, color: true } },
-      },
-      take: 3,
-      orderBy: { createdAt: "desc" },
+    const sameCategory = categoryId
+      ? await db.article.findMany({
+          where: { published: true, id: { not: articleId }, categoryId },
+          select: cardSelect,
+          take: TAKE,
+          orderBy: { createdAt: "desc" },
+        })
+      : [];
+
+    if (sameCategory.length >= TAKE) return sameCategory;
+
+    const exclude = [articleId, ...sameCategory.map((a) => a.id)];
+    const fill = await db.article.findMany({
+      where: { published: true, id: { notIn: exclude } },
+      select: cardSelect,
+      take: TAKE - sameCategory.length,
+      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     });
+
+    return [...sameCategory, ...fill];
   } catch {
     return [];
   }
