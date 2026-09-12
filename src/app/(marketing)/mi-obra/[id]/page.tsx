@@ -18,10 +18,20 @@ import {
   Eye,
   Mail,
   FileText,
+  Ruler,
+  Archive,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
-import { getObraAccess } from "@/lib/obra-access";
+import { getObraAccess, listObrasFor } from "@/lib/obra-access";
+import {
+  obraMetrics,
+  currentStage,
+  formatSurface,
+  projectTypeLabel,
+} from "@/lib/obra-metrics";
+import { ObraSwitcher } from "@/components/obra/obra-switcher";
+import { archiveObra, unarchiveObra, updateObra } from "../actions";
 import { formatCurrency, cn } from "@/lib/utils";
 import { Field, inputClass, ConfirmSubmit } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/ui/loading";
@@ -118,22 +128,15 @@ export default async function ObraPage({
   // El nombre del rubro sale de los que ya trajimos: evita otra consulta.
   const rubroName = new Map(obra.rubros.map((r) => [r.id, r.name]));
 
-  // --- métricas ---
-  const presupuesto = obra.rubros.reduce((s, r) => s + r.budgeted, 0);
-  const gastado = obra.expenses.reduce((s, e) => s + e.amount, 0);
-  const pendiente = Math.max(0, presupuesto - gastado);
-  // Avance ponderado por presupuesto si hay montos; si no, promedio simple.
-  const avance =
-    presupuesto > 0
-      ? Math.round(
-          obra.rubros.reduce((s, r) => s + (r.budgeted / presupuesto) * r.progress, 0)
-        )
-      : obra.rubros.length
-        ? Math.round(obra.rubros.reduce((s, r) => s + r.progress, 0) / obra.rubros.length)
-        : 0;
-  const gastoPct = presupuesto > 0 ? Math.round((gastado / presupuesto) * 100) : 0;
-  // Señal temprana: se gastó bastante más de lo que se avanzó.
-  const alerta = presupuesto > 0 && gastoPct - avance >= 15;
+  // --- métricas (fuente única: lib/obra-metrics) ---
+  const { presupuesto, gastado, pendiente, avance, gastoPct, alerta } =
+    obraMetrics(obra.rubros, obra.expenses);
+  const etapaActual = currentStage(obra.rubros);
+  const superficie = formatSurface(obra.surfaceM2);
+  const moneda = obra.currency;
+
+  // Para el selector: las otras obras del usuario (propias + invitadas).
+  const misObras = await listObrasFor(member);
 
   return (
     <article className="pb-24 pt-28 md:pt-32">
@@ -158,10 +161,18 @@ export default async function ObraPage({
                   {obra.name}
                 </h1>
                 <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-concrete-300">
+                  {superficie && (
+                    <span className="flex items-center gap-1">
+                      <Ruler className="h-4 w-4 text-amber-400" /> {superficie}
+                    </span>
+                  )}
                   {obra.location && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-4 w-4 text-amber-400" /> {obra.location}
                     </span>
+                  )}
+                  {obra.projectType && (
+                    <span>{projectTypeLabel[obra.projectType]}</span>
                   )}
                   {obra.startDate && (
                     <span>Inicio {obra.startDate.toLocaleDateString("es-AR")}</span>
@@ -171,7 +182,15 @@ export default async function ObraPage({
                   )}
                 </p>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">
+                <ObraSwitcher
+                  current={{ id: obra.id, name: obra.name }}
+                  obras={misObras.map((o) => ({
+                    id: o.id,
+                    name: o.name,
+                    location: o.location,
+                  }))}
+                />
                 <Link
                   href={`/mi-obra/${obra.id}/informe`}
                   className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/20"
@@ -182,8 +201,19 @@ export default async function ObraPage({
               </div>
             </div>
 
+            {/* Resumen numérico: lo que el usuario quiere ver de un vistazo */}
+            <div className="relative mt-6 grid grid-cols-2 gap-x-4 gap-y-4 border-t border-white/10 pt-5 sm:grid-cols-4">
+              <HeadStat label="Avance" value={`${avance}%`} accent />
+              <HeadStat
+                label="Presupuesto"
+                value={formatCurrency(presupuesto, moneda)}
+              />
+              <HeadStat label="Gastado" value={formatCurrency(gastado, moneda)} />
+              <HeadStat label="Etapa actual" value={etapaActual} />
+            </div>
+
             {/* Barras de avance vs gasto */}
-            <div className="relative mt-7 grid gap-5 sm:grid-cols-2">
+            <div className="relative mt-6 grid gap-5 sm:grid-cols-2">
               <MiniBar
                 label="Avance de obra"
                 pct={avance}
@@ -193,12 +223,39 @@ export default async function ObraPage({
               <MiniBar
                 label="Presupuesto ejecutado"
                 pct={Math.min(100, gastoPct)}
-                value={`${formatCurrency(gastado)} de ${formatCurrency(presupuesto)}`}
+                value={`${formatCurrency(gastado, moneda)} de ${formatCurrency(presupuesto, moneda)}`}
                 barClass={alerta ? "bg-red-500" : "bg-emerald-500"}
               />
             </div>
           </div>
         </div>
+
+        {/* Obra archivada: queda claro que está guardada, no activa */}
+        {obra.archivedAt && (
+          <div className="mt-4 flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="flex items-start gap-2 text-sm text-ink-700">
+              <Archive className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <span>
+                <strong className="font-semibold text-ink-900">
+                  Obra archivada
+                </strong>{" "}
+                el {obra.archivedAt.toLocaleDateString("es-AR")}. Se conserva
+                completa: podés seguir consultándola o restaurarla.
+              </span>
+            </p>
+            {access.canManage && (
+              <form action={unarchiveObra} className="shrink-0">
+                <input type="hidden" name="id" value={obra.id} />
+                <SubmitButton
+                  pendingText="Restaurando…"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-ink-900 px-4 py-2 text-sm font-semibold text-white hover:bg-ink-800"
+                >
+                  Restaurar obra
+                </SubmitButton>
+              </form>
+            )}
+          </div>
+        )}
 
         {/* Aviso de sólo lectura para el invitado que mira */}
         {!canEdit && (
@@ -239,10 +296,10 @@ export default async function ObraPage({
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <Stat label="Presupuesto" value={formatCurrency(presupuesto)} hint="suma de etapas" />
+              <Stat label="Presupuesto" value={formatCurrency(presupuesto, moneda)} hint="suma de etapas" />
               <Stat
                 label="Gastado"
-                value={formatCurrency(gastado)}
+                value={formatCurrency(gastado, moneda)}
                 hint={`${gastoPct}% del presupuesto`}
               />
               <Stat label="Avance de obra" value={`${avance}%`} accent hint="ponderado por etapa" />
@@ -299,13 +356,135 @@ export default async function ObraPage({
                         </p>
                       </div>
                       <span className="shrink-0 font-mono font-medium text-ink-900">
-                        {formatCurrency(e.amount)}
+                        {formatCurrency(e.amount, moneda)}
                       </span>
                     </div>
                   ))
                 )}
               </Panel>
             </div>
+
+            {/* Datos de la obra: identidad + archivar. Sólo quien administra. */}
+            {access.canManage && !obra.archivedAt && (
+              <div className="rounded-3xl border border-ink-100 bg-white p-6 shadow-soft">
+                <h3 className="font-display font-semibold text-ink-900">
+                  Datos de la obra
+                </h3>
+                <p className="mt-1 text-sm text-ink-500">
+                  Qué estás construyendo. Se usa en el encabezado y en el informe.
+                </p>
+                <form action={updateObra} className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <input type="hidden" name="id" value={obra.id} />
+                  <Field label="Nombre de la obra">
+                    <input
+                      name="name"
+                      required
+                      defaultValue={obra.name}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Ubicación">
+                    <input
+                      name="location"
+                      defaultValue={obra.location ?? ""}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Tipo de obra">
+                    <select
+                      name="projectType"
+                      className={inputClass}
+                      defaultValue={obra.projectType ?? "obra_nueva"}
+                    >
+                      <option value="obra_nueva">Obra nueva</option>
+                      <option value="ampliacion">Ampliación</option>
+                      <option value="refaccion">Refacción</option>
+                    </select>
+                  </Field>
+                  <Field label="Superficie" hint="En m².">
+                    <input
+                      name="surfaceM2"
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      defaultValue={obra.surfaceM2 ?? ""}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Moneda">
+                    <select
+                      name="currency"
+                      className={inputClass}
+                      defaultValue={obra.currency}
+                    >
+                      <option value="ARS">Pesos (ARS)</option>
+                      <option value="USD">Dólares (USD)</option>
+                    </select>
+                  </Field>
+                  <Field label="Estado">
+                    <select
+                      name="status"
+                      className={inputClass}
+                      defaultValue={obra.status}
+                    >
+                      <option value="planificacion">En planificación</option>
+                      <option value="ejecucion">En ejecución</option>
+                      <option value="pausada">Pausada</option>
+                      <option value="terminada">Terminada</option>
+                    </select>
+                  </Field>
+                  <Field label="Inicio">
+                    <input
+                      name="startDate"
+                      type="date"
+                      defaultValue={
+                        obra.startDate
+                          ? obra.startDate.toISOString().slice(0, 10)
+                          : ""
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Entrega estimada">
+                    <input
+                      name="estimatedEnd"
+                      type="date"
+                      defaultValue={
+                        obra.estimatedEnd
+                          ? obra.estimatedEnd.toISOString().slice(0, 10)
+                          : ""
+                      }
+                      className={inputClass}
+                    />
+                  </Field>
+                  <div className="sm:col-span-2">
+                    <SubmitButton
+                      pendingText="Guardando…"
+                      className="rounded-xl bg-ink-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-800"
+                    >
+                      Guardar cambios
+                    </SubmitButton>
+                  </div>
+                </form>
+
+                <form
+                  action={archiveObra}
+                  className="mt-6 flex flex-col gap-3 border-t border-ink-100 pt-5 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <input type="hidden" name="id" value={obra.id} />
+                  <p className="text-sm text-ink-500">
+                    Archivar guarda la obra completa y la saca del listado activo.
+                    Podés restaurarla cuando quieras.
+                  </p>
+                  <SubmitButton
+                    pendingText="Archivando…"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-ink-200 px-4 py-2.5 text-sm font-medium text-ink-700 hover:border-ink-400"
+                  >
+                    <Archive className="h-4 w-4" /> Archivar obra
+                  </SubmitButton>
+                </form>
+              </div>
+            )}
           </div>
           ),
 
@@ -323,7 +502,7 @@ export default async function ObraPage({
                   label="¿Cuánto pensás invertir en total?"
                   hint={
                     presupuesto > 0
-                      ? `Hoy tenés ${formatCurrency(presupuesto)} repartidos. Al confirmar se reemplaza el monto de cada etapa de abajo.`
+                      ? `Hoy tenés ${formatCurrency(presupuesto, moneda)} repartidos. Al confirmar se reemplaza el monto de cada etapa de abajo.`
                       : "Se completa el presupuesto de cada etapa de abajo con los porcentajes típicos de una obra."
                   }
                 >
@@ -479,9 +658,9 @@ export default async function ObraPage({
           <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <div>
               <div className="mb-4 grid gap-3 sm:grid-cols-3">
-                <Stat label="Presupuesto" value={formatCurrency(presupuesto)} />
-                <Stat label="Gastado" value={formatCurrency(gastado)} />
-                <Stat label="Pendiente" value={formatCurrency(pendiente)} accent />
+                <Stat label="Presupuesto" value={formatCurrency(presupuesto, moneda)} />
+                <Stat label="Gastado" value={formatCurrency(gastado, moneda)} />
+                <Stat label="Pendiente" value={formatCurrency(pendiente, moneda)} accent />
               </div>
               {obra.expenses.length === 0 ? (
                 <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-400">
@@ -499,7 +678,7 @@ export default async function ObraPage({
                         </p>
                       </div>
                       <span className="shrink-0 font-mono font-semibold text-ink-900">
-                        {formatCurrency(e.amount)}
+                        {formatCurrency(e.amount, moneda)}
                       </span>
                       <form action={deleteExpense}>
                         <input type="hidden" name="obraId" value={obra.id} />
@@ -583,7 +762,7 @@ export default async function ObraPage({
                           <p className="truncate font-medium text-ink-900">{mat.label}</p>
                           <p className="text-xs text-ink-400">
                             {mat.qty} {mat.unit ?? ""}
-                            {mat.unitPrice ? ` · ${formatCurrency(mat.unitPrice)} c/u` : ""}
+                            {mat.unitPrice ? ` · ${formatCurrency(mat.unitPrice, moneda)} c/u` : ""}
                             {mat.store ? ` · ${mat.store}` : ""}
                           </p>
                         </div>
@@ -909,6 +1088,32 @@ function Panel({
         <h3 className="font-display font-semibold text-ink-900">{title}</h3>
       </div>
       <div className="divide-y divide-ink-50">{children}</div>
+    </div>
+  );
+}
+
+/** Métrica del encabezado oscuro del tablero. */
+function HeadStat({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[0.7rem] font-medium uppercase tracking-wider text-concrete-400">
+        {label}
+      </p>
+      <p
+        className={`mt-0.5 truncate font-display text-[0.95rem] font-bold sm:text-lg md:text-xl ${
+          accent ? "text-amber-400" : "text-white"
+        }`}
+      >
+        {value}
+      </p>
     </div>
   );
 }

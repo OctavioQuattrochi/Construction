@@ -136,9 +136,15 @@ model Obra {
   member       Member         @relation(fields: [memberId], references: [id], onDelete: Cascade)
   name         String
   location     String?
+  // Identidad de la obra: qué se está construyendo y de qué tamaño.
+  surfaceM2    Float?
+  projectType  String? // obra_nueva | ampliacion | refaccion
+  currency     String         @default("ARS")
   startDate    DateTime?
   estimatedEnd DateTime?
   status       String         @default("planificacion") // planificacion | ejecucion | terminada | pausada
+  // Archivado (no borrado): la obra y todos sus datos se conservan.
+  archivedAt   DateTime?
   // Línea base: el presupuesto original NO se toca. Los aumentos se registran
   // como ajustes, así siempre se ve por qué subió la obra.
   baselineTotal   Float?

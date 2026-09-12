@@ -32,7 +32,10 @@ const platformFeatures = [
 export function Hero() {
   const reduce = useReducedMotion();
   return (
-    <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-ink-950 pt-20">
+    <section
+      data-dark-hero
+      className="relative flex min-h-[100svh] items-center overflow-hidden bg-ink-950 pt-20"
+    >
       {/* Background image + overlays */}
       <div className="absolute inset-0">
         <Image

@@ -6,6 +6,11 @@ import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
 import { getObraAccess } from "@/lib/obra-access";
 import { materialsVariationSince } from "@/lib/price-index";
+import {
+  PROJECT_TYPES,
+  CURRENCIES,
+  type ProjectType,
+} from "@/lib/obra-metrics";
 import { tasksFor, progressFromTasks } from "@/lib/obra-tasks";
 
 async function requireMember() {
@@ -46,11 +51,24 @@ export async function createObra(fd: FormData) {
   const m = await requireMember();
   const name = str(fd, "name");
   if (!name) return;
+
+  const projectType = str(fd, "projectType");
+  const currency = str(fd, "currency");
+  const surface = num(fd, "surfaceM2");
+
   const obra = await db.obra.create({
     data: {
       memberId: m.id,
       name,
       location: str(fd, "location") || null,
+      // Sólo valores permitidos: si viene cualquier otra cosa, queda sin tipo.
+      projectType: PROJECT_TYPES.includes(projectType as ProjectType)
+        ? projectType
+        : null,
+      currency: CURRENCIES.includes(currency as (typeof CURRENCIES)[number])
+        ? currency
+        : "ARS",
+      surfaceM2: surface > 0 ? surface : null,
       startDate: date(fd, "startDate"),
       estimatedEnd: date(fd, "estimatedEnd"),
       status: str(fd, "status") || "planificacion",
@@ -71,19 +89,63 @@ export async function createObra(fd: FormData) {
   await db.obraRubro.createMany({
     data: defaults.map((name, i) => ({ obraId: obra.id, name, order: i })),
   });
+
+  // Presupuesto inicial: se reparte con el MISMO mecanismo que "repartir por
+  // etapa" y queda congelado como línea base, para que el tablero muestre
+  // números coherentes desde el primer minuto (y no una obra en $0).
+  const initialBudget = num(fd, "initialBudget");
+  if (initialBudget > 0) {
+    const rubros = await db.obraRubro.findMany({ where: { obraId: obra.id } });
+    await spreadBudget(rubros, initialBudget);
+    await db.obra.update({
+      where: { id: obra.id },
+      data: { baselineTotal: initialBudget, baselineAt: new Date() },
+    });
+  }
+
   revalidatePath("/mi-obra");
   redirect(`/mi-obra/${obra.id}`);
+}
+
+/** Archiva la obra: se conserva íntegra, sale del listado activo. */
+export async function archiveObra(fd: FormData) {
+  const m = await requireMember();
+  const id = str(fd, "id");
+  // Archivar/restaurar es potestad de quien administra la obra.
+  await manageObra(id, m.id, m.email);
+  await db.obra.update({ where: { id }, data: { archivedAt: new Date() } });
+  revalidatePath("/mi-obra");
+  revalidatePath(`/mi-obra/${id}`);
+}
+
+export async function unarchiveObra(fd: FormData) {
+  const m = await requireMember();
+  const id = str(fd, "id");
+  await manageObra(id, m.id, m.email);
+  await db.obra.update({ where: { id }, data: { archivedAt: null } });
+  revalidatePath("/mi-obra");
+  revalidatePath(`/mi-obra/${id}`);
 }
 
 export async function updateObra(fd: FormData) {
   const m = await requireMember();
   const id = str(fd, "id");
   await ownObra(id, m.id, m.email);
+  const projectType = str(fd, "projectType");
+  const currency = str(fd, "currency");
+  const surface = num(fd, "surfaceM2");
   await db.obra.update({
     where: { id },
     data: {
       name: str(fd, "name"),
       location: str(fd, "location") || null,
+      projectType: PROJECT_TYPES.includes(projectType as ProjectType)
+        ? projectType
+        : null,
+      currency: CURRENCIES.includes(currency as (typeof CURRENCIES)[number])
+        ? currency
+        : "ARS",
+      surfaceM2: surface > 0 ? surface : null,
       startDate: date(fd, "startDate"),
       estimatedEnd: date(fd, "estimatedEnd"),
       status: str(fd, "status"),
@@ -287,23 +349,18 @@ const BUDGET_SHARES: Record<string, number> = {
   Terminaciones: 12,
 };
 
-/** Reparte un presupuesto total entre las etapas usando los % de referencia. */
-export async function distributeBudget(fd: FormData) {
-  const m = await requireMember();
-  const obraId = str(fd, "obraId");
-  await ownObra(obraId, m.id, m.email);
-  const total = num(fd, "total");
-  if (total <= 0) return;
-
-  const rubros = await db.obraRubro.findMany({ where: { obraId } });
-  if (rubros.length === 0) return;
-
-  // Las etapas estándar usan su porcentaje típico. Las que agregó el usuario
-  // (ej. "Pileta") reciben el promedio de las conocidas, para que nunca queden
-  // en cero. Después se normaliza todo para que sume exactamente el total.
+/**
+ * Reparte un total entre las etapas con los porcentajes típicos de obra. Las
+ * etapas que agregó el usuario (ej. "Pileta") reciben el promedio de las
+ * conocidas para que nunca queden en cero; después se normaliza para que la
+ * suma dé exactamente el total. Lo usan el alta de obra y "repartir por etapa".
+ */
+async function spreadBudget(
+  rubros: { id: string; name: string }[],
+  total: number
+) {
   const knownValues = Object.values(BUDGET_SHARES);
-  const avgShare =
-    knownValues.reduce((s, v) => s + v, 0) / knownValues.length;
+  const avgShare = knownValues.reduce((s, v) => s + v, 0) / knownValues.length;
   const shares = rubros.map((r) => BUDGET_SHARES[r.name] ?? avgShare);
   const sum = shares.reduce((s, v) => s + v, 0);
 
@@ -315,6 +372,19 @@ export async function distributeBudget(fd: FormData) {
       })
     )
   );
+}
+
+/** Reparte un presupuesto total entre las etapas usando los % de referencia. */
+export async function distributeBudget(fd: FormData) {
+  const m = await requireMember();
+  const obraId = str(fd, "obraId");
+  await ownObra(obraId, m.id, m.email);
+  const total = num(fd, "total");
+  if (total <= 0) return;
+
+  const rubros = await db.obraRubro.findMany({ where: { obraId } });
+  if (rubros.length === 0) return;
+  await spreadBudget(rubros, total);
   revalidatePath(`/mi-obra/${obraId}`);
 }
 

@@ -1,13 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HardHat, ArrowRight, MapPin, Plus } from "lucide-react";
+import { HardHat, ArrowRight, MapPin, Plus, Ruler, Archive } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Field, inputClass } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/ui/loading";
 import { getMemberSession } from "@/lib/member-auth";
 import { listObrasFor } from "@/lib/obra-access";
 import { formatCurrency } from "@/lib/utils";
-import { createObra } from "./actions";
+import {
+  obraMetrics,
+  currentStage,
+  statusLabel,
+  projectTypeLabel,
+  formatSurface,
+} from "@/lib/obra-metrics";
+import { createObra, unarchiveObra } from "./actions";
 import { MiObraLanding } from "@/components/obra/mi-obra-landing";
 
 export const metadata: Metadata = {
@@ -18,21 +25,24 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const statusLabel: Record<string, string> = {
-  planificacion: "En planificación",
-  ejecucion: "En ejecución",
-  pausada: "Pausada",
-  terminada: "Terminada",
-};
-
-export default async function MiObraPage() {
+export default async function MiObraPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ archivadas?: string }>;
+}) {
   const member = await getMemberSession();
   // Sin sesión mostramos la portada que explica qué es Mi Obra, en vez de
   // mandar al login a ciegas. Es también lo que indexan los buscadores.
   if (!member) return <MiObraLanding />;
 
-  // Incluye las obras propias y aquellas a las que fue invitado.
-  const obras = await listObrasFor(member);
+  const params = await searchParams;
+  const verArchivadas = params.archivadas === "1";
+
+  // Propias + invitadas. Por defecto sólo activas.
+  const [obras, archivadas] = await Promise.all([
+    listObrasFor(member, { archived: verArchivadas }),
+    verArchivadas ? Promise.resolve([]) : listObrasFor(member, { archived: true }),
+  ]);
 
   return (
     <>
@@ -50,75 +60,140 @@ export default async function MiObraPage() {
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           {/* Lista */}
           <div>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-display text-lg font-semibold text-ink-900">
+                {verArchivadas ? "Obras archivadas" : "Mis obras"}
+                {obras.length > 0 && (
+                  <span className="ml-2 text-sm font-normal text-ink-400">
+                    {obras.length}
+                  </span>
+                )}
+              </h2>
+              {verArchivadas ? (
+                <Link
+                  href="/mi-obra"
+                  className="text-sm font-medium text-amber-600 hover:underline"
+                >
+                  ← Volver a las activas
+                </Link>
+              ) : (
+                archivadas.length > 0 && (
+                  <Link
+                    href="/mi-obra?archivadas=1"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-500 hover:text-ink-900"
+                  >
+                    <Archive className="h-4 w-4" />
+                    Archivadas ({archivadas.length})
+                  </Link>
+                )
+              )}
+            </div>
+
             {obras.length === 0 ? (
               <div className="flex flex-col items-center rounded-3xl border border-dashed border-ink-200 bg-white p-12 text-center">
                 <HardHat className="h-12 w-12 text-ink-300" />
-                <h2 className="mt-4 font-display text-xl font-semibold text-ink-900">
-                  Todavía no creaste tu obra
-                </h2>
+                <h3 className="mt-4 font-display text-xl font-semibold text-ink-900">
+                  {verArchivadas
+                    ? "No tenés obras archivadas"
+                    : "Todavía no creaste tu obra"}
+                </h3>
                 <p className="mt-1 max-w-md text-ink-500">
-                  Creá tu primera obra y empezá a controlar presupuesto, materiales
-                  y avance. Es gratis.
+                  {verArchivadas
+                    ? "Cuando termines una obra vas a poder archivarla acá sin perder nada."
+                    : "Creá tu primera obra y empezá a controlar presupuesto, materiales y avance. Es gratis."}
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
                 {obras.map((o) => {
-                  const presupuesto = o.rubros.reduce((s, r) => s + r.budgeted, 0);
-                  const gastado = o.expenses.reduce((s, e) => s + e.amount, 0);
-                  const avance = o.rubros.length
-                    ? Math.round(
-                        o.rubros.reduce((s, r) => s + r.progress, 0) / o.rubros.length
-                      )
-                    : 0;
+                  // Mismo cálculo que el tablero: una sola fuente de verdad.
+                  const m = obraMetrics(o.rubros, o.expenses);
+                  const etapa = currentStage(o.rubros);
+                  const sup = formatSurface(o.surfaceM2);
                   return (
-                    <Link
+                    <div
                       key={o.id}
-                      href={`/mi-obra/${o.id}`}
-                      className="block rounded-3xl border border-ink-100 bg-white p-6 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated"
+                      className="rounded-3xl border border-ink-100 bg-white shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-elevated"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h3 className="font-display text-lg font-bold text-ink-900">
-                            {o.name}
-                          </h3>
-                          {o.location && (
-                            <p className="mt-0.5 flex items-center gap-1 text-sm text-ink-400">
-                              <MapPin className="h-3.5 w-3.5" /> {o.location}
+                      <Link href={`/mi-obra/${o.id}`} className="block p-6">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <h3 className="font-display text-lg font-bold text-ink-900">
+                              {o.name}
+                            </h3>
+                            <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-400">
+                              {o.location && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3.5 w-3.5" /> {o.location}
+                                </span>
+                              )}
+                              {sup && (
+                                <span className="flex items-center gap-1">
+                                  <Ruler className="h-3.5 w-3.5" /> {sup}
+                                </span>
+                              )}
+                              {o.projectType && (
+                                <span>{projectTypeLabel[o.projectType]}</span>
+                              )}
                             </p>
-                          )}
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-1.5">
-                          <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700">
-                            {statusLabel[o.status] ?? o.status}
-                          </span>
-                          {o.shared && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-0.5 text-[11px] font-medium text-ink-600">
-                              {o.myRole === "editor" ? "Compartida · cargás avance" : "Compartida · sólo mirás"}
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
+                            <span className="rounded-full bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-700">
+                              {statusLabel[o.status] ?? o.status}
                             </span>
-                          )}
+                            {o.shared && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-ink-100 px-2.5 py-0.5 text-[11px] font-medium text-ink-600">
+                                {o.myRole === "editor"
+                                  ? "Compartida · cargás avance"
+                                  : "Compartida · sólo mirás"}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="mt-4 grid grid-cols-3 gap-3 border-t border-ink-100 pt-4 text-sm">
-                        <div>
-                          <p className="text-xs text-ink-400">Presupuesto</p>
-                          <p className="font-semibold text-ink-900">
-                            {formatCurrency(presupuesto)}
-                          </p>
+                        <div className="mt-4 grid grid-cols-2 gap-3 border-t border-ink-100 pt-4 text-sm sm:grid-cols-4">
+                          <div>
+                            <p className="text-xs text-ink-400">Presupuesto</p>
+                            <p className="font-semibold text-ink-900">
+                              {formatCurrency(m.presupuesto, o.currency)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-ink-400">Gastado</p>
+                            <p className="font-semibold text-ink-900">
+                              {formatCurrency(m.gastado, o.currency)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-ink-400">Avance</p>
+                            <p className="font-semibold text-amber-600">
+                              {m.avance}%
+                            </p>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs text-ink-400">Etapa actual</p>
+                            <p className="truncate font-semibold text-ink-900">
+                              {etapa}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs text-ink-400">Gastado</p>
-                          <p className="font-semibold text-ink-900">
-                            {formatCurrency(gastado)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-ink-400">Avance</p>
-                          <p className="font-semibold text-amber-600">{avance}%</p>
-                        </div>
-                      </div>
-                    </Link>
+                      </Link>
+
+                      {verArchivadas && o.myRole === "admin" && (
+                        <form
+                          action={unarchiveObra}
+                          className="border-t border-ink-100 px-6 py-3"
+                        >
+                          <input type="hidden" name="id" value={o.id} />
+                          <SubmitButton
+                            pendingText="Restaurando…"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:underline"
+                          >
+                            Restaurar obra
+                          </SubmitButton>
+                        </form>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -134,11 +209,57 @@ export default async function MiObraPage() {
               <Plus className="h-4 w-4 text-amber-500" /> Nueva obra
             </h2>
             <Field label="Nombre de la obra">
-              <input name="name" required placeholder="Casa familia Pérez" className={inputClass} />
+              <input
+                name="name"
+                required
+                placeholder="Casa familia Pérez"
+                className={inputClass}
+              />
             </Field>
             <Field label="Ubicación" hint="Opcional.">
               <input name="location" placeholder="Córdoba" className={inputClass} />
             </Field>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Tipo de obra">
+                <select
+                  name="projectType"
+                  className={inputClass}
+                  defaultValue="obra_nueva"
+                >
+                  <option value="obra_nueva">Obra nueva</option>
+                  <option value="ampliacion">Ampliación</option>
+                  <option value="refaccion">Refacción</option>
+                </select>
+              </Field>
+              <Field label="Superficie" hint="En m². Opcional.">
+                <input
+                  name="surfaceM2"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="180"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[0.8fr_1.2fr]">
+              <Field label="Moneda">
+                <select name="currency" className={inputClass} defaultValue="ARS">
+                  <option value="ARS">Pesos (ARS)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
+              </Field>
+              <Field label="Presupuesto inicial" hint="Opcional. Después lo ajustás.">
+                <input
+                  name="initialBudget"
+                  type="number"
+                  min={0}
+                  step="1000"
+                  placeholder="24000000"
+                  className={inputClass}
+                />
+              </Field>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Inicio">
                 <input name="startDate" type="date" className={inputClass} />
@@ -148,7 +269,11 @@ export default async function MiObraPage() {
               </Field>
             </div>
             <Field label="Estado">
-              <select name="status" className={inputClass} defaultValue="planificacion">
+              <select
+                name="status"
+                className={inputClass}
+                defaultValue="planificacion"
+              >
                 <option value="planificacion">En planificación</option>
                 <option value="ejecucion">En ejecución</option>
                 <option value="pausada">Pausada</option>
@@ -162,7 +287,8 @@ export default async function MiObraPage() {
               Crear obra <ArrowRight className="h-4 w-4" />
             </SubmitButton>
             <p className="text-xs text-ink-400">
-              Se crean las etapas típicas de obra para que sólo cargues tus montos.
+              Se crean las etapas típicas de obra. Si cargás un presupuesto
+              inicial, se reparte entre ellas y queda como línea base.
             </p>
           </form>
         </div>

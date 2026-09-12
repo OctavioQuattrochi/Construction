@@ -18,7 +18,10 @@ export function PageHeader({
   brandLarge?: boolean;
 }) {
   return (
-    <section className={cn("relative overflow-hidden bg-ink-950 pt-28 pb-16 text-white md:pt-36 md:pb-20", className)}>
+    <section
+      data-dark-hero
+      className={cn("relative overflow-hidden bg-ink-950 pt-28 pb-16 text-white md:pt-36 md:pb-20", className)}
+    >
       <div className="pointer-events-none absolute inset-0 bg-grid-light bg-[size:56px_56px] opacity-20" />
       <div className="pointer-events-none absolute -top-32 left-1/2 h-72 w-[44rem] -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />

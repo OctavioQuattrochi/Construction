@@ -25,12 +25,24 @@ export function Navbar({ member = null }: { member?: Member }) {
     router.refresh();
   }
 
+  // Arriba de todo el navbar es transparente. Eso sólo funciona si abajo hay
+  // una cabecera oscura: en páginas de fondo claro (ej. el tablero de una obra)
+  // el logo claro quedaba blanco sobre blanco. Las páginas con hero oscuro se
+  // marcan con data-dark-hero y son las únicas que usan la variante clara.
+  const [darkHero, setDarkHero] = useState(false);
+  useEffect(() => {
+    setDarkHero(Boolean(document.querySelector("[data-dark-hero]")));
+  }, [pathname]);
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // "Sobre fondo oscuro" = estamos arriba de todo Y la página tiene hero oscuro.
+  const onDark = !scrolled && darkHero;
 
   useEffect(() => setOpen(false), [pathname]);
 
@@ -42,16 +54,16 @@ export function Navbar({ member = null }: { member?: Member }) {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
           "transition-all duration-500 ease-premium",
-          scrolled
-            ? "border-b border-ink-100/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_0_0_rgba(12,15,20,0.04)]"
-            : "border-b border-transparent bg-transparent"
+          onDark
+            ? "border-b border-transparent bg-transparent"
+            : "border-b border-ink-100/80 bg-white/80 backdrop-blur-xl shadow-[0_1px_0_0_rgba(12,15,20,0.04)]"
         )}
       >
         <nav className="container-x flex h-16 items-center justify-between gap-4 md:h-[4.5rem]">
           <Link href="/" aria-label={site.brand} className="shrink-0">
             {/* Arriba de todo el navbar es transparente sobre un fondo oscuro:
                 ahí el logo va en versión clara para que se lea. */}
-            <Logo light={!scrolled} />
+            <Logo light={onDark} />
           </Link>
 
           <div className="hidden items-center gap-0.5 lg:flex">
@@ -68,7 +80,7 @@ export function Navbar({ member = null }: { member?: Member }) {
                   className={cn(
                     "whitespace-nowrap rounded-full px-3 py-2 text-sm font-medium transition-colors duration-200 xl:px-4",
                     // Sobre el hero oscuro (navbar transparente) el texto va claro.
-                    scrolled
+                    !onDark
                       ? active
                         ? "bg-ink-50 text-ink-900"
                         : "text-ink-500 hover:bg-ink-50 hover:text-ink-900"
@@ -90,7 +102,7 @@ export function Navbar({ member = null }: { member?: Member }) {
                   onClick={() => setMenuOpen((v) => !v)}
                   className={cn(
                     "flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 transition-colors",
-                    scrolled
+                    !onDark
                       ? "border-ink-200 hover:border-ink-300"
                       : "border-white/25 hover:border-white/50"
                   )}
@@ -106,7 +118,7 @@ export function Navbar({ member = null }: { member?: Member }) {
                   <span
                     className={cn(
                       "max-w-[8rem] truncate text-sm font-medium",
-                      scrolled ? "text-ink-700" : "text-white"
+                      onDark ? "text-white" : "text-ink-700"
                     )}
                   >
                     {member.name.split(" ")[0]}
@@ -161,7 +173,7 @@ export function Navbar({ member = null }: { member?: Member }) {
           <button
             className={cn(
               "btn-focus -mr-1 rounded-full p-2 lg:hidden",
-              scrolled ? "text-ink-800" : "text-white"
+              onDark ? "text-white" : "text-ink-800"
             )}
             onClick={() => setOpen((v) => !v)}
             aria-label="Menú"

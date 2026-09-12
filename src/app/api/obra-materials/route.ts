@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getMemberSession } from "@/lib/member-auth";
+import { getObraAccess, listObrasFor } from "@/lib/obra-access";
 
 export const runtime = "nodejs";
 
@@ -42,9 +43,18 @@ export async function POST(req: Request) {
   }
 
   const { obraId, items, source } = parsed.data;
-  const obra = await db.obra.findUnique({ where: { id: obraId } });
-  if (!obra || obra.memberId !== session.id) {
+  // Autorización centralizada: el dueño y el editor invitado cargan materiales;
+  // el viewer y cualquier otro, no. Antes esto comparaba memberId a mano y
+  // dejaba afuera a los editores invitados, que sí pueden hacerlo desde la UI.
+  const access = await getObraAccess(obraId, session);
+  if (!access) {
     return NextResponse.json({ error: "Obra no encontrada." }, { status: 404 });
+  }
+  if (!access.canEdit) {
+    return NextResponse.json(
+      { error: "No tenés permiso para cargar materiales en esta obra." },
+      { status: 403 }
+    );
   }
 
   await db.obraMaterial.createMany({
@@ -69,10 +79,11 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "No autenticado." }, { status: 401 });
   }
-  const obras = await db.obra.findMany({
-    where: { memberId: session.id },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true },
-  });
+  // Mismas obras donde realmente puede cargar: propias + invitado como editor,
+  // y sólo las activas (no tiene sentido cargar en una obra archivada).
+  const all = await listObrasFor(session);
+  const obras = all
+    .filter((o) => o.myRole === "admin" || o.myRole === "editor")
+    .map((o) => ({ id: o.id, name: o.name }));
   return NextResponse.json({ obras });
 }

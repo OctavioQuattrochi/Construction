@@ -50,12 +50,18 @@ export async function getObraAccess(
  * Se evitan los `include` anidados (Prisma los resuelve uno por uno): traemos
  * los rubros y gastos de todas las obras en una sola consulta y agrupamos acá.
  */
-export async function listObrasFor(user: { id: string; email: string }) {
+export async function listObrasFor(
+  user: { id: string; email: string },
+  /** Por defecto sólo las activas; las archivadas se piden explícitamente. */
+  opts: { archived?: boolean } = {}
+) {
   const email = user.email.toLowerCase();
+  // null = activa. Se filtra en la consulta para no traer de más.
+  const archivedFilter = opts.archived ? { not: null } : null;
 
   const [own, memberships] = await Promise.all([
     db.obra.findMany({
-      where: { memberId: user.id },
+      where: { memberId: user.id, archivedAt: archivedFilter },
       orderBy: { createdAt: "desc" },
     }),
     db.obraMember.findMany({ where: { email }, select: { obraId: true, role: true } }),
@@ -64,7 +70,7 @@ export async function listObrasFor(user: { id: string; email: string }) {
   const invitedIds = memberships.map((m) => m.obraId);
   const invited = invitedIds.length
     ? await db.obra.findMany({
-        where: { id: { in: invitedIds } },
+        where: { id: { in: invitedIds }, archivedAt: archivedFilter },
         orderBy: { createdAt: "desc" },
       })
     : [];
@@ -75,7 +81,14 @@ export async function listObrasFor(user: { id: string; email: string }) {
     ? await Promise.all([
         db.obraRubro.findMany({
           where: { obraId: { in: ids } },
-          select: { obraId: true, budgeted: true, progress: true },
+          // name y order los necesita currentStage() de obra-metrics.
+          select: {
+            obraId: true,
+            name: true,
+            budgeted: true,
+            progress: true,
+            order: true,
+          },
         }),
         db.obraExpense.findMany({
           where: { obraId: { in: ids } },
