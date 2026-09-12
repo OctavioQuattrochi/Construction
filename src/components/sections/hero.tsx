@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Calculator,
@@ -30,6 +30,7 @@ const platformFeatures = [
 ];
 
 export function Hero() {
+  const reduce = useReducedMotion();
   return (
     <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-ink-950 pt-20">
       {/* Background image + overlays */}
@@ -186,9 +187,14 @@ export function Hero() {
         className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 md:block"
       >
         <div className="flex h-10 w-6 items-start justify-center rounded-full border border-white/25 p-1.5">
+          {/* El rebote es decorativo: con reduced-motion queda quieto. */}
           <motion.span
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            animate={reduce ? undefined : { y: [0, 10, 0] }}
+            transition={
+              reduce
+                ? undefined
+                : { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
+            }
             className="h-2 w-1 rounded-full bg-amber-400"
           />
         </div>

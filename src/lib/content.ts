@@ -3,51 +3,48 @@
 
 export const defaultServices = [
   {
-    title: "Consultoría en construcción",
-    slug: "consultoria",
-    icon: "Compass",
-    summary:
-      "Asesoramiento técnico independiente antes, durante y después de tu obra.",
+    title: "Proyecto y planificación",
+    slug: "proyecto-y-planificacion",
+    icon: "PencilRuler",
+    // El `summary` es la promesa corta que encabeza la tarjeta.
+    summary: "Empezá tu obra con información clara.",
     description:
-      "Analizamos tu proyecto, presupuesto y decisiones constructivas para que inviertas con criterio. Ideal para quienes construyen por primera vez o necesitan una segunda opinión profesional.",
+      "Antes de poner el primer ladrillo conviene saber qué se va a construir, en qué orden y cuánto cuesta. Te ayudamos a ordenar la idea, entender las etapas y llegar al inicio de obra con un plan realista.",
     features:
-      "Análisis de proyecto|Revisión de presupuestos|Segunda opinión técnica|Asesoramiento de materiales",
+      "Planificación de proyectos|Guías para construir|Documentación y trámites|Ampliaciones y reformas",
     order: 1,
   },
   {
-    title: "Inspecciones y peritajes técnicos",
-    slug: "peritajes",
-    icon: "ClipboardCheck",
-    summary:
-      "Diagnóstico del estado de una construcción, patologías y su resolución.",
+    title: "Control y seguimiento de obra",
+    slug: "control-y-seguimiento",
+    icon: "HardHat",
+    summary: "Sabé qué está pasando en tu obra.",
     description:
-      "Detección de fisuras, humedades, problemas estructurales y vicios ocultos. Informes técnicos con validez profesional para compraventa, seguros o litigios.",
+      "Avance real por etapa, gastos registrados, materiales y libro de obra con fotos. El profesional carga los datos y el propietario los ve al día, desde el celular y sin llamados.",
     features:
-      "Detección de patologías|Informe técnico firmado|Peritaje para compraventa|Evaluación estructural",
+      "Avance por etapa|Presupuesto y gastos|Materiales y compras|Libro de obra con fotos",
     order: 2,
   },
   {
-    title: "Arquitectura y proyecto",
-    slug: "arquitectura",
-    icon: "PencilRuler",
-    summary:
-      "Diseño de espacios funcionales, eficientes y con identidad propia.",
+    title: "Asesoramiento para construir",
+    slug: "asesoramiento",
+    icon: "Compass",
+    summary: "Tomá decisiones con más información y menos incertidumbre.",
     description:
-      "Desde el anteproyecto hasta la documentación técnica y municipal. Proyectos de vivienda, ampliaciones y refacciones pensados para tu forma de habitar y tu presupuesto.",
+      "Una segunda mirada técnica antes de decidir. Revisamos presupuestos, comparamos alternativas y explicamos las implicancias de cada opción en plata, plazo y durabilidad.",
     features:
-      "Anteproyecto y diseño|Documentación técnica|Trámites municipales|Ampliaciones y refacciones",
+      "Análisis de presupuestos|Comparación de alternativas|Orientación sobre materiales|Revisión de proyectos|Consultas técnicas",
     order: 3,
   },
   {
-    title: "Dirección y gestión de obra",
-    slug: "direccion-de-obra",
-    icon: "HardHat",
-    summary:
-      "Control profesional de tiempos, costos y calidad de ejecución.",
+    title: "Inspección y diagnóstico",
+    slug: "inspeccion-y-diagnostico",
+    icon: "ClipboardCheck",
+    summary: "Detectá problemas antes de que sean más costosos.",
     description:
-      "Coordinación de gremios, control de avance, certificaciones y cumplimiento del proyecto. Tu obra ejecutada según lo proyectado, sin sobrecostos evitables.",
+      "Humedades, fisuras y patologías que empeoran con el tiempo. Identificamos la causa real —no el síntoma— y te decimos qué hay que hacer, con qué urgencia y qué se puede esperar.",
     features:
-      "Coordinación de gremios|Control de avance y costos|Certificación de obra|Control de calidad",
+      "Humedades y filtraciones|Fisuras y patologías|Evaluación del estado general|Inspección previa a una compra|Informes técnicos",
     order: 4,
   },
 ];
@@ -83,6 +80,10 @@ export const faqs = [
   {
     q: "¿Qué es BildAp?",
     a: "BildAp es una plataforma para la industria de la construcción: reúne guías técnicas, calculadoras de materiales, un comparador de precios entre proveedores, una red de profesionales asociados y un servicio inmobiliario. Todo en un mismo lugar para tomar mejores decisiones.",
+  },
+  {
+    q: "¿Qué es Mi Obra y quién la usa?",
+    a: "Mi Obra es el seguimiento de obra de BildAp: avance por etapa, presupuesto, gastos, materiales y libro de obra con fotos. El profesional a cargo carga los datos y el propietario los ve al día desde el celular. También se puede usar solo, si estás construyendo por tu cuenta. Es gratis y necesita una cuenta.",
   },
   {
     q: "¿En qué zonas opera?",

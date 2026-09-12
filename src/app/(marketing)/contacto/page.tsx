@@ -7,7 +7,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contacto",
   description:
-    "Contactá al estudio para consultoría, peritajes, proyectos y dirección de obra. Respondemos por email o WhatsApp.",
+    "Pedí asesoramiento profesional para tu obra: revisión de presupuestos, planificación, seguimiento o diagnóstico de humedades y fisuras. Respondemos por email o WhatsApp.",
 };
 
 const channels = [

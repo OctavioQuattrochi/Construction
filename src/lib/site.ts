@@ -36,7 +36,7 @@ export const nav = [
 
 export const footerNav = {
   Plataforma: [
-    { label: "Servicios", href: "/#servicios" },
+    { label: "Soluciones", href: "/#servicios" },
     { label: "Sobre BildAp", href: "/#sobre" },
     { label: "Preguntas frecuentes", href: "/#faq" },
     { label: "Contacto", href: "/contacto" },

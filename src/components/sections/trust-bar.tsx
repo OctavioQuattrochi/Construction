@@ -1,23 +1,39 @@
-import { ShieldCheck, Clock, FileCheck2, HandCoins } from "lucide-react";
+import { BookOpenCheck, Calculator, LifeBuoy, HandCoins } from "lucide-react";
 
 const marquee = [
-  "Dirección de obra",
-  "Peritajes técnicos",
-  "Hormigón armado",
-  "Impermeabilización",
+  "Calculadoras de materiales",
+  "Precios reales de proveedores",
+  "Seguimiento de obra",
   "Presupuestos",
-  "Ampliaciones",
+  "Guías para construir",
+  "Comparación de materiales",
+  "Control de gastos",
+  "Ampliaciones y reformas",
+  "Humedades y patologías",
   "Trámites municipales",
-  "Refacciones",
-  "Diseño de interiores",
-  "Estructuras",
 ];
 
 const guarantees = [
-  { icon: ShieldCheck, title: "Respaldo profesional", desc: "Matrícula y firma" },
-  { icon: Clock, title: "40+ años", desc: "de experiencia del fundador" },
-  { icon: FileCheck2, title: "Informes válidos", desc: "compraventa y seguros" },
-  { icon: HandCoins, title: "Cuidamos tu plata", desc: "sin sobrecostos" },
+  {
+    icon: BookOpenCheck,
+    title: "Información confiable",
+    desc: "para decidir mejor antes de construir",
+  },
+  {
+    icon: Calculator,
+    title: "Herramientas prácticas",
+    desc: "calculadoras y recursos para tu obra",
+  },
+  {
+    icon: LifeBuoy,
+    title: "Respaldo profesional",
+    desc: "cuando necesitás asistencia especializada",
+  },
+  {
+    icon: HandCoins,
+    title: "Control de costos",
+    desc: "para evitar gastos y errores innecesarios",
+  },
 ];
 
 export function TrustBar() {
@@ -45,7 +61,7 @@ export function TrustBar() {
         {guarantees.map((g) => (
           <div
             key={g.title}
-            className="flex items-center gap-3 bg-white px-5 py-6"
+            className="flex items-start gap-3 bg-white px-5 py-6"
           >
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
               <g.icon className="h-5 w-5" />
@@ -54,7 +70,7 @@ export function TrustBar() {
               <p className="font-display text-sm font-semibold text-ink-900">
                 {g.title}
               </p>
-              <p className="text-xs text-ink-400">{g.desc}</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-ink-400">{g.desc}</p>
             </div>
           </div>
         ))}

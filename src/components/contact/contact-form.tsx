@@ -7,11 +7,12 @@ import { Send, Loader2, CheckCircle2 } from "lucide-react";
 import { Input, Textarea, Select, Label } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 
+// Alineado con las 4 soluciones de la plataforma.
 const services = [
-  "Consultoría en construcción",
-  "Inspección / peritaje técnico",
-  "Arquitectura y proyecto",
-  "Dirección de obra",
+  "Proyecto y planificación",
+  "Control y seguimiento de obra",
+  "Asesoramiento para construir",
+  "Inspección y diagnóstico",
   "Otra consulta",
 ];
 

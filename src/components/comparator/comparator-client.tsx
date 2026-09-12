@@ -129,7 +129,16 @@ const availabilityMeta: Record<
   },
 };
 
+/** Término inicial tomado de la URL (?q=cemento). */
+function readInitialQuery() {
+  return new URLSearchParams(window.location.search).get("q")?.trim() ?? "";
+}
+
 export function ComparatorClient() {
+  // La búsqueda arranca desde ?q= : hace que el enlace sea compartible y que
+  // el SearchAction declarado en los datos estructurados sea real.
+  // Arranca vacío para que servidor y cliente rendericen igual; el término de
+  // la URL se aplica después de hidratar (ver efecto de arranque).
   const [query, setQuery] = useState("");
   const [data, setData] = useState<CompareResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -165,6 +174,27 @@ export function ComparatorClient() {
       if (reqId === requestRef.current) setLoading(false);
     }
   }, []);
+
+  // Búsqueda inicial (link compartido o llegada desde otra sección).
+  const bootRef = useRef(false);
+  useEffect(() => {
+    if (bootRef.current) return;
+    bootRef.current = true;
+    const q = readInitialQuery();
+    if (q.length >= 2) {
+      setQuery(q);
+      runSearch(q);
+    }
+  }, [runSearch]);
+
+  // Reflejar el término en la URL sin recargar, para poder compartirla.
+  useEffect(() => {
+    if (!searched) return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("q") === searched) return;
+    url.searchParams.set("q", searched);
+    window.history.replaceState(null, "", url.toString());
+  }, [searched]);
 
   const basket = useBasket();
   const addToBasket = useCallback(
