@@ -9,18 +9,34 @@ function escapeHtml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
+/**
+ * Sólo se permiten enlaces http(s), mailto/tel y rutas internas (/ o #).
+ * Un href con esquema `javascript:`, `data:`, etc. renderizaría un enlace
+ * ejecutable (XSS almacenado en el cuerpo del artículo), así que se descarta y
+ * el enlace se muestra como texto plano.
+ */
+function safeHref(raw: string): string | null {
+  const href = raw.trim();
+  if (/^(https?:\/\/|mailto:|tel:)/i.test(href)) return href;
+  if (/^[/#]/.test(href)) return href; // ruta interna o ancla
+  // El escapeHtml previo ya convirtió < > &; acá sólo rechazamos esquemas.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href)) return null; // cualquier otro esquema
+  return href; // relativo sin esquema (ej. "guia.html")
+}
+
 function inline(text: string): string {
   return text
     .replace(/`([^`]+)`/g, '<code class="md-code">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>")
-    .replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      (_m, label, href) =>
-        `<a href="${href}" class="md-link"${
-          /^https?:/.test(href) ? ' target="_blank" rel="noopener noreferrer"' : ""
-        }>${label}</a>`
-    );
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label, href) => {
+      const safe = safeHref(href);
+      if (!safe) return label; // esquema peligroso: sólo el texto, sin enlace
+      const external = /^https?:/i.test(safe);
+      return `<a href="${safe}" class="md-link"${
+        external ? ' target="_blank" rel="noopener noreferrer"' : ""
+      }>${label}</a>`;
+    });
 }
 
 export function markdownToHtml(md: string): string {

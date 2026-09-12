@@ -63,3 +63,19 @@ export function toList(value: string, sep = ","): string[] {
     .map((v) => v.trim())
     .filter(Boolean);
 }
+
+/**
+ * Serializa datos estructurados (JSON-LD) para incrustar en un <script>.
+ * Escapa `<` (y `>`, `&`) para que un valor con "</script>" no pueda cerrar el
+ * bloque e inyectar HTML. JSON.stringify por sí solo NO lo hace.
+ */
+export function jsonLdScript(data: unknown): string {
+  // Escapa a la forma \uXXXX cualquier caracter que pueda romper el <script>
+  // contenedor (< > &) o el parser JS embebido (U+2028/U+2029). El backslash se
+  // toma de fromCharCode para no depender de escapes de backslash en el fuente.
+  const bs = String.fromCharCode(92); // "\"
+  return JSON.stringify(data).replace(
+    /[<>&\u2028\u2029]/g,
+    (c) => bs + "u" + c.charCodeAt(0).toString(16).padStart(4, "0")
+  );
+}

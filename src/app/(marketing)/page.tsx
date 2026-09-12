@@ -9,6 +9,7 @@ import { News } from "@/components/sections/news";
 import { getServices } from "@/lib/queries";
 import { faqs, aboutBio } from "@/lib/content";
 import { site } from "@/lib/site";
+import { jsonLdScript } from "@/lib/utils";
 
 export default async function HomePage() {
   const services = await getServices();
@@ -76,7 +77,7 @@ export default async function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }}
       />
       <Hero />
       <TrustBar />

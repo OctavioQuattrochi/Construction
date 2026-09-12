@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, Calendar, User } from "lucide-react";
 import { getArticleBySlug, getRelatedArticles } from "@/lib/queries";
 import { markdownToHtml } from "@/lib/markdown";
+import { jsonLdScript } from "@/lib/utils";
 import { formatDate, toList } from "@/lib/utils";
 import { ArticleCard } from "@/components/knowledge/article-card";
 import { ButtonLink } from "@/components/ui/button";
@@ -92,7 +93,7 @@ export default async function ArticlePage({ params }: Props) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }}
       />
 
       <article className="pb-24 pt-28 md:pt-32">
