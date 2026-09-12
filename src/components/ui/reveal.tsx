@@ -52,9 +52,13 @@ const itemVariants: Variants = {
   hidden: { opacity: 0, y: 22 },
   show: { opacity: 1, y: 0, transition: { duration: 0.65, ease: easing } },
 };
+// `y: 0` explícito y no omitido: useReducedMotion() devuelve false en el
+// primer render, así que el item ya se montó con translateY(22px). Si estas
+// variantes no nombran `y`, Framer no lo anima de vuelta y la tarjeta queda
+// corrida 22px para siempre (medido en el navegador).
 const reducedItemVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.2 } },
+  hidden: { opacity: 0, y: 0 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.2 } },
 };
 
 export function StaggerGroup({

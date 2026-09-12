@@ -64,10 +64,13 @@ export function Newsletter({
             )}
           >
             <Mail className={cn("h-5 w-5", variant === "band" ? "text-concrete-400" : "text-ink-400")} />
+            {/* El placeholder no es una etiqueta: sin aria-label el lector de
+                pantalla anuncia un campo sin nombre. */}
             <input
               type="email"
               name="email"
               required
+              aria-label="Tu email para recibir novedades"
               placeholder="Tu email"
               className={cn(
                 "w-full bg-transparent py-3 focus:outline-none",

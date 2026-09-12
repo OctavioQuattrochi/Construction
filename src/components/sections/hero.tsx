@@ -61,7 +61,12 @@ export function Hero() {
             <span className="font-display font-bold text-white">
               Bild<span className="text-amber-400">Ap</span>
             </span>
-            <span className="text-concrete-400">· {site.companyTagline}</span>
+            {/* Medido con emulación móvil: hasta ~430px de ancho el subtítulo
+                parte la píldora en dos líneas (54px de alto en vez de 42) y
+                queda deforme. Desde sm entra en una sola línea. */}
+            <span className="hidden text-concrete-400 sm:inline">
+              · {site.companyTagline}
+            </span>
           </motion.div>
 
           <motion.h1
