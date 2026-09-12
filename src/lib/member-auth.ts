@@ -3,9 +3,20 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "bildap_member";
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "insecure-dev-secret-change-me-please-32chars"
-);
+
+// Audiencia del token de miembro público, distinta de la del panel admin: así
+// un token de miembro nunca es aceptado como sesión de administrador.
+const MEMBER_AUDIENCE = "bildap-member";
+
+/** Secreto de firma. Falla cerrado en producción si AUTH_SECRET no está. */
+function getSecret(): Uint8Array {
+  const s = process.env.AUTH_SECRET;
+  if (s && s.length >= 32) return new TextEncoder().encode(s);
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET no configurado (requerido en producción).");
+  }
+  return new TextEncoder().encode("insecure-dev-secret-change-me-please-32chars");
+}
 
 export type MemberSession = {
   id: string;
@@ -100,8 +111,9 @@ export async function createMemberSession(member: MemberSession) {
   const token = await new SignJWT({ ...member })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
+    .setAudience(MEMBER_AUDIENCE)
     .setExpirationTime("30d")
-    .sign(secret);
+    .sign(getSecret());
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -122,7 +134,9 @@ export async function getMemberSession(): Promise<MemberSession | null> {
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret(), {
+      audience: MEMBER_AUDIENCE,
+    });
     return {
       id: payload.id as string,
       email: payload.email as string,

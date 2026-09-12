@@ -5,9 +5,25 @@ import bcrypt from "bcryptjs";
 import { db } from "./db";
 
 const COOKIE_NAME = "construction_session";
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "insecure-dev-secret-change-me-please-32chars"
-);
+
+// Audiencia del token de administrador. Un token de miembro (audiencia distinta)
+// NO puede pasar por acá aunque esté firmado con el mismo secreto: cierra la
+// confusión de tokens entre el panel y las cuentas públicas.
+const ADMIN_AUDIENCE = "bildap-admin";
+
+/**
+ * Secreto de firma. Falla cerrado en producción: si AUTH_SECRET no está
+ * configurado no se usa un valor conocido (eso permitiría forjar sesiones),
+ * se corta. En desarrollo se permite un fallback para no frenar el trabajo.
+ */
+function getSecret(): Uint8Array {
+  const s = process.env.AUTH_SECRET;
+  if (s && s.length >= 32) return new TextEncoder().encode(s);
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET no configurado (requerido en producción).");
+  }
+  return new TextEncoder().encode("insecure-dev-secret-change-me-please-32chars");
+}
 
 export type SessionUser = {
   id: string;
@@ -31,8 +47,9 @@ export async function createSession(user: SessionUser) {
   const token = await new SignJWT({ ...user })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
+    .setAudience(ADMIN_AUDIENCE)
     .setExpirationTime("7d")
-    .sign(secret);
+    .sign(getSecret());
 
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
@@ -54,7 +71,12 @@ export async function getSession(): Promise<SessionUser | null> {
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
-    const { payload } = await jwtVerify(token, secret);
+    const { payload } = await jwtVerify(token, getSecret(), {
+      audience: ADMIN_AUDIENCE,
+    });
+    // Exigir rol de administrador explícitamente: no alcanza con que el token
+    // sea válido, tiene que ser un admin. Un token sin rol admin se rechaza.
+    if (payload.role !== "admin") return null;
     return {
       id: payload.id as string,
       email: payload.email as string,

@@ -2,9 +2,16 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const secret = new TextEncoder().encode(
-  process.env.AUTH_SECRET || "insecure-dev-secret-change-me-please-32chars"
-);
+const ADMIN_AUDIENCE = "bildap-admin";
+
+function getSecret(): Uint8Array {
+  const s = process.env.AUTH_SECRET;
+  if (s && s.length >= 32) return new TextEncoder().encode(s);
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("AUTH_SECRET no configurado (requerido en producción).");
+  }
+  return new TextEncoder().encode("insecure-dev-secret-change-me-please-32chars");
+}
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -17,8 +24,13 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("construction_session")?.value;
   if (token) {
     try {
-      await jwtVerify(token, secret);
-      return NextResponse.next();
+      // Audiencia admin + rol admin: un token de miembro (misma firma, otra
+      // audiencia) no pasa. La autorización real vive en getSession()/layout;
+      // esto es la primera barrera en el borde.
+      const { payload } = await jwtVerify(token, getSecret(), {
+        audience: ADMIN_AUDIENCE,
+      });
+      if (payload.role === "admin") return NextResponse.next();
     } catch {
       /* invalid — fall through to redirect */
     }
