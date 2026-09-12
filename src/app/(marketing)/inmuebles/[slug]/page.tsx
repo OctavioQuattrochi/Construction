@@ -25,7 +25,12 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const property = await getPropertyBySlug(slug);
-  if (!property) return { title: "Inmueble no encontrado" };
+  // notFound() también acá, para no dejar dos criterios distintos de "no
+  // existe" entre los metadatos y el componente.
+  // (El soft 404 que devolvía 200 lo causaba el loading.tsx del segmento padre:
+  // envolvía esta ruta en un Suspense que mandaba el shell con 200 antes de
+  // que corriera notFound(). Ese loading.tsx se eliminó.)
+  if (!property || !property.published) notFound();
   return {
     title: property.title,
     description: property.description.slice(0, 155),
