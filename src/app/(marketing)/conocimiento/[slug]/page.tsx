@@ -39,14 +39,48 @@ export default async function ArticlePage({ params }: Props) {
   const html = markdownToHtml(article.content);
   const tags = toList(article.tags);
 
+  const base = site.url.replace(/\/$/, "");
+  const url = `${base}/conocimiento/${article.slug}`;
+  // Article completo (headline/publisher/fechas son lo que Google pide para
+  // los resultados enriquecidos) + BreadcrumbList, que muestra la ruta de
+  // navegación debajo del título en el buscador.
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: article.title,
-    description: article.excerpt,
-    author: { "@type": "Person", name: article.author },
-    datePublished: new Date(article.createdAt).toISOString(),
-    image: article.coverImage || undefined,
+    "@graph": [
+      {
+        "@type": "Article",
+        headline: article.title,
+        description: article.excerpt,
+        inLanguage: "es-AR",
+        mainEntityOfPage: { "@type": "WebPage", "@id": url },
+        // El autor es la marca, no una persona: declararlo como Person era
+        // incorrecto y Google lo marca como dato inconsistente.
+        author: { "@type": "Organization", name: article.author },
+        publisher: {
+          "@type": "Organization",
+          name: site.brand,
+          logo: { "@type": "ImageObject", url: `${base}/icon.svg` },
+        },
+        datePublished: new Date(article.createdAt).toISOString(),
+        dateModified: new Date(article.updatedAt).toISOString(),
+        image: article.coverImage || undefined,
+        articleSection: article.category?.name || undefined,
+        keywords: article.tags || undefined,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Inicio", item: base },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Centro de conocimiento",
+            item: `${base}/conocimiento`,
+          },
+          { "@type": "ListItem", position: 3, name: article.title, item: url },
+        ],
+      },
+    ],
   };
 
   return (
