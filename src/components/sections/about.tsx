@@ -58,8 +58,12 @@ export function About() {
             </span>
           </Reveal>
           <Reveal delay={0.05}>
+            {/* La frase que define el producto: BildAp no ejecuta la obra,
+                te da con qué decidir mejor en cada etapa. */}
             <h2 className="mt-4 text-3xl font-bold leading-[1.12] text-gradient sm:text-4xl md:text-[2.6rem]">
-              La plataforma que conecta todo el mundo de la construcción
+              BildAp no construye por vos.
+              <br />
+              Te ayuda a construir mejor.
             </h2>
           </Reveal>
           <Reveal delay={0.1}>

@@ -72,8 +72,8 @@ export function Tools() {
           light
           align="center"
           eyebrow="Todo BildAp"
-          title="Una plataforma, todo tu proyecto"
-          description="Herramientas, información y comunidad para que planifiques, presupuestes, compres y construyas mejor — sin necesidad de ser un experto."
+          title="Calculá. Compará. Planificá. Controlá. Consultá."
+          description="Todo desde un mismo lugar. Herramientas, información y comunidad para que presupuestes, compres y construyas mejor — sin necesidad de ser un experto."
         />
 
         <StaggerGroup className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
