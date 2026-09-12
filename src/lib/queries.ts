@@ -51,9 +51,23 @@ export async function getArticles(filter: ArticleFilter = {}) {
     if (filter.featured) where.featured = true;
     if (filter.categorySlug) where.category = { slug: filter.categorySlug };
 
+    // El listado no muestra el cuerpo del artículo: traerlo serían ~7 KB por
+    // artículo transferidos al pedo. Se piden sólo los campos de la tarjeta.
     const articles = await db.article.findMany({
       where,
-      include: { category: true },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        excerpt: true,
+        coverImage: true,
+        readMinutes: true,
+        author: true,
+        tags: true,
+        featured: true,
+        createdAt: true,
+        category: { select: { name: true, slug: true, color: true } },
+      },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
       take: filter.search ? undefined : filter.take,
     });
@@ -198,7 +212,17 @@ export async function getRelatedArticles(articleId: string, categoryId: string |
         id: { not: articleId },
         ...(categoryId ? { categoryId } : {}),
       },
-      include: { category: true },
+      // Tarjetas: sin el cuerpo del artículo.
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        excerpt: true,
+        coverImage: true,
+        readMinutes: true,
+        createdAt: true,
+        category: { select: { name: true, slug: true, color: true } },
+      },
       take: 3,
       orderBy: { createdAt: "desc" },
     });
