@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { HardHat, ArrowRight, MapPin, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Field, inputClass } from "@/components/admin/ui";
@@ -9,10 +8,12 @@ import { getMemberSession } from "@/lib/member-auth";
 import { listObrasFor } from "@/lib/obra-access";
 import { formatCurrency } from "@/lib/utils";
 import { createObra } from "./actions";
+import { MiObraLanding } from "@/components/obra/mi-obra-landing";
 
 export const metadata: Metadata = {
-  title: "Mi obra",
-  robots: { index: false, follow: false },
+  title: "Mi Obra — seguimiento de obra con presupuesto, avance y gastos",
+  description:
+    "Llevá tu obra en un solo lugar: presupuesto con línea base, avance por etapa, gastos, materiales y libro de obra con fotos. El profesional carga los datos y el propietario los ve al día. Gratis.",
 };
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,9 @@ const statusLabel: Record<string, string> = {
 
 export default async function MiObraPage() {
   const member = await getMemberSession();
-  if (!member) redirect("/ingresar");
+  // Sin sesión mostramos la portada que explica qué es Mi Obra, en vez de
+  // mandar al login a ciegas. Es también lo que indexan los buscadores.
+  if (!member) return <MiObraLanding />;
 
   // Incluye las obras propias y aquellas a las que fue invitado.
   const obras = await listObrasFor(member);
