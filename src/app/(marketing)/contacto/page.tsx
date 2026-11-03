@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Mail, MapPin, MessageCircle, Clock, Phone } from "lucide-react";
+import { Mail, MapPin, Clock, Phone } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { ContactForm } from "@/components/contact/contact-form";
 import { site } from "@/lib/site";
@@ -11,14 +11,6 @@ export const metadata: Metadata = {
 };
 
 const channels = [
-  {
-    icon: MessageCircle,
-    label: "WhatsApp",
-    value: "Respuesta rápida",
-    href: site.whatsappUrl,
-    external: true,
-    accent: "#25D366",
-  },
   {
     icon: Mail,
     label: "Email",
