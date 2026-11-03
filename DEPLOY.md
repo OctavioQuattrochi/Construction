@@ -78,7 +78,6 @@ git push -u origin main
 | `ADMIN_EMAIL` | `admin@construccion.com.ar` (o el que quieras) |
 | `ADMIN_PASSWORD` | tu contraseña de admin |
 | `NEXT_PUBLIC_SITE_URL` | `https://TU-SITIO.netlify.app` (lo ajustás tras el 1er deploy) |
-| `NEXT_PUBLIC_WHATSAPP` | el número real, formato `549351...` |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | el email real del estudio |
 
 Generá el `AUTH_SECRET` con:

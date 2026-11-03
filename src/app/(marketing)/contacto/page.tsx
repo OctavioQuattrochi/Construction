@@ -7,7 +7,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Contacto",
   description:
-    "Pedí asesoramiento profesional para tu obra: revisión de presupuestos, planificación, seguimiento o diagnóstico de humedades y fisuras. Respondemos por email o WhatsApp.",
+    "Pedí asesoramiento profesional para tu obra: revisión de presupuestos, planificación, seguimiento o diagnóstico de humedades y fisuras. Respondemos por email.",
 };
 
 const channels = [
@@ -55,13 +55,7 @@ export default function ContactoPage() {
               return (
                 <Wrapper
                   key={c.label}
-                  {...(c.href
-                    ? {
-                        href: c.href,
-                        target: c.external ? "_blank" : undefined,
-                        rel: c.external ? "noopener noreferrer" : undefined,
-                      }
-                    : {})}
+                  {...(c.href ? { href: c.href } : {})}
                   className="flex items-center gap-4 rounded-2xl border border-ink-100 bg-white p-5 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated"
                 >
                   <div
