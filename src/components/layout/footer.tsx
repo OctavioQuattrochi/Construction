@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mail, MapPin, MessageCircle } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 import { footerNav, site } from "@/lib/site";
 import { Logo } from "@/components/ui/logo";
 import { Newsletter } from "@/components/sections/newsletter";
@@ -37,14 +37,6 @@ export function Footer() {
                 className="flex items-center gap-2.5 text-concrete-300 transition-colors hover:text-white"
               >
                 <Mail className="h-4 w-4 text-amber-500" /> {site.email}
-              </a>
-              <a
-                href={site.whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 text-concrete-300 transition-colors hover:text-white"
-              >
-                <MessageCircle className="h-4 w-4 text-amber-500" /> WhatsApp directo
               </a>
               <p className="flex items-center gap-2.5">
                 <MapPin className="h-4 w-4 text-amber-500" /> {site.location}
