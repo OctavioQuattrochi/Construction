@@ -17,7 +17,7 @@ import { site } from "@/lib/site";
 const ease = [0.22, 1, 0.36, 1] as const;
 
 const stats = [
-  { value: "+40", label: "Materiales en el comparador" },
+  { value: "+150", label: "Materiales para comparar" },
   { value: "+8", label: "Calculadoras de obra" },
   { value: "24/7", label: "Acceso libre y gratuito" },
 ];

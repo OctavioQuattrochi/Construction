@@ -1,8 +1,7 @@
 import Image from "next/image";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Reveal } from "@/components/ui/reveal";
 import { ButtonLink } from "@/components/ui/button";
-import { site } from "@/lib/site";
 
 export function CTA() {
   return (
@@ -35,10 +34,6 @@ export function CTA() {
               <ButtonLink href="/contacto" size="lg" variant="primary">
                 Solicitar consultoría
                 <ArrowRight className="h-5 w-5" />
-              </ButtonLink>
-              <ButtonLink href={site.whatsappUrl} external size="lg" variant="dark">
-                <MessageCircle className="h-5 w-5" />
-                Escribir por WhatsApp
               </ButtonLink>
             </div>
           </div>

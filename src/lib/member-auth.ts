@@ -1,6 +1,7 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { PRODUCTION_URL } from "@/lib/site";
 
 const COOKIE_NAME = "bildap_member";
 
@@ -42,7 +43,12 @@ export function requestOrigin(req: Request): string {
 }
 
 export function googleRedirectUri(origin: string): string {
-  return `${origin.replace(/\/$/, "")}/api/auth/google/callback`;
+  // En producción siempre se usa el dominio canónico, aunque el usuario haya
+  // entrado por www o por el subdominio de Netlify. Google exige coincidencia
+  // exacta entre esta URI y la registrada en el cliente OAuth.
+  const redirectOrigin =
+    process.env.NODE_ENV === "production" ? PRODUCTION_URL : origin;
+  return `${redirectOrigin.replace(/\/$/, "")}/api/auth/google/callback`;
 }
 
 export function googleAuthUrl(state: string, redirectUri: string): string {

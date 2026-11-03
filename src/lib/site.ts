@@ -52,12 +52,6 @@ export const site = {
   country: "Argentina",
   url: siteUrl(),
   email: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "hola@bildap.com.ar",
-  whatsapp: process.env.NEXT_PUBLIC_WHATSAPP || "5493511234567",
-  get whatsappUrl() {
-    return `https://wa.me/${this.whatsapp}?text=${encodeURIComponent(
-      "Hola BildAp, quisiera hacer una consulta sobre mi proyecto."
-    )}`;
-  },
 } as const;
 
 // Navegación principal. "Mi obra" es el corazón de la plataforma y va primero.

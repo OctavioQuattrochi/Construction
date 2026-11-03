@@ -4,9 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { Section, SectionHeading } from "@/components/ui/section";
-import { ButtonLink } from "@/components/ui/button";
 import { faqs } from "@/lib/content";
-import { site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 export function FAQ() {
@@ -20,11 +18,6 @@ export function FAQ() {
             title="Resolvemos tus dudas antes de empezar"
             description="Y si te queda alguna, escribinos: respondemos personalmente."
           />
-          <div className="mt-8 hidden lg:block">
-            <ButtonLink href={site.whatsappUrl} external variant="secondary">
-              Hacer otra consulta
-            </ButtonLink>
-          </div>
         </div>
 
         <div className="divide-y divide-ink-100 rounded-3xl border border-ink-100 bg-white px-2 shadow-soft">
