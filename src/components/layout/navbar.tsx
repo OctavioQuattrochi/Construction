@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, MessageCircle, LogOut, User, Heart, HardHat } from "lucide-react";
+import { Menu, X, LogOut, User, Heart, HardHat } from "lucide-react";
 import { nav, site } from "@/lib/site";
 import { Logo } from "@/components/ui/logo";
 import { ButtonLink } from "@/components/ui/button";
@@ -225,15 +225,6 @@ export function Navbar({ member = null }: { member?: Member }) {
                   Consultar
                 </ButtonLink>
               </div>
-              <ButtonLink
-                href={site.whatsappUrl}
-                external
-                variant="ghost"
-                size="sm"
-                className="mt-2 w-full"
-              >
-                <MessageCircle className="h-4 w-4" /> WhatsApp
-              </ButtonLink>
             </div>
           </motion.div>
         )}
