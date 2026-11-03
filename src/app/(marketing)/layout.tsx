@@ -1,6 +1,5 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { WhatsAppFloat } from "@/components/layout/whatsapp-float";
 import { ScrollProgress } from "@/components/layout/scroll-progress";
 import { getMemberSession } from "@/lib/member-auth";
 
@@ -24,7 +23,6 @@ export default async function MarketingLayout({
       />
       <main className="min-h-screen">{children}</main>
       <Footer />
-      <WhatsAppFloat />
     </>
   );
 }
