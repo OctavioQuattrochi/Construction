@@ -49,7 +49,7 @@ Copy explícito: "Precios en vivo de N proveedores · referencia de otros M".
 (Ya ocultamos referencia por defecto; falta ajustar el texto.)
 
 **B-6. Separar plataforma de estudio ✅**
-BildAp = plataforma. El estudio = un servicio dentro. Juan Carlos = fundador/aval.
+BildAp = plataforma y única identidad pública. El estudio = un servicio dentro. (2026-11: se quitó del sitio toda atribución personal.)
 Quita la contradicción "un solo estudio" vs "red".
 
 **B-7. Invertir el muro de la calculadora ✅**
