@@ -6,7 +6,7 @@ Snapshot corto para retomar sin redescubrir el proyecto. Detalle en `PLAN.md`, `
 Plataforma de construcción para Argentina/Córdoba. El núcleo es **Mi Obra**: seguir una obra semana a semana (etapas/avance, dinero, materiales, libro de obra). Alrededor: calculadoras, comparador de precios y contenido.
 
 ## Marca
-BildAp es la única identidad pública: sin nombres personales en sitio, SEO, JSON-LD ni firmas (autor por defecto: "Equipo BildAp"). En 2026-11 se quitó al fundador, su cita firmada y el badge "40+ años de experiencia" (eran sus años, no los de la plataforma). No reintroducir.
+BildAp es la única identidad pública: sin nombres personales en sitio, SEO, JSON-LD ni firmas (autor por defecto: "Equipo BildAp"). En 2026-11 (a19e3a1) se quitó al fundador, su cita firmada y el badge "40+ años de experiencia" (eran sus años, no los de la plataforma). No reintroducir.
 
 ## Stack
 - Next.js 15 (App Router) + TypeScript + Tailwind + Framer Motion + Prisma.
